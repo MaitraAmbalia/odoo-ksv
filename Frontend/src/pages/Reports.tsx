@@ -8,10 +8,10 @@ export const Reports: React.FC = () => {
   const periods = ['This Week', 'This Month', 'This Quarter', 'Custom'];
 
   const summaryCards = [
-    { label: 'Total Spend', value: '₹2.3Cr', trend: '+12%', isPositive: true },
-    { label: 'POs Raised', value: '142', trend: '+5%', isPositive: true },
-    { label: 'Avg Approval Time', value: '2.3 days', trend: '-0.5 days', isPositive: true },
-    { label: 'Overdue', value: '₹14.2L', trend: '+2%', isPositive: false },
+    { label: 'Total Spend', value: '₹0.00', trend: '0%', isPositive: true },
+    { label: 'POs Raised', value: '0', trend: '0%', isPositive: true },
+    { label: 'Avg Approval Time', value: '0 days', trend: '0%', isPositive: true },
+    { label: 'Overdue', value: '₹0.00', trend: '0%', isPositive: false },
   ];
 
   return (
