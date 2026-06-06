@@ -4,6 +4,12 @@ import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Vendors } from './pages/Vendors';
 import { CreateRFQ } from './pages/CreateRFQ';
+import { Quotations } from './pages/Quotations';
+import { Approvals } from './pages/Approvals';
+import { PurchaseOrders } from './pages/PurchaseOrders';
+import { Invoices } from './pages/Invoices';
+import { Reports } from './pages/Reports';
+import { Activity } from './pages/Activity';
 import './index.css';
 
 function App() {
@@ -16,6 +22,12 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/rfqs" element={<CreateRFQ />} />
+        <Route path="/quotations" element={<Quotations />} />
+        <Route path="/approvals" element={<Approvals />} />
+        <Route path="/purchase-orders" element={<PurchaseOrders />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/activity" element={<Activity />} />
       </Routes>
     </Router>
   );
