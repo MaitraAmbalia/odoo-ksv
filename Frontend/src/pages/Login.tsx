@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { api } from '../utils/api';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ export const Login: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -19,10 +20,20 @@ export const Login: React.FC = () => {
       return;
     }
     setError('');
-    setSuccessMsg('Successfully logged in! Redirecting...');
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 800);
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      if (response.data?.success) {
+        localStorage.setItem('token', response.data.data.token);
+        setSuccessMsg('Successfully logged in! Redirecting...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 800);
+      } else {
+        setError(response.data?.message || 'Login failed');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Invalid email or password');
+    }
   };
 
   return (

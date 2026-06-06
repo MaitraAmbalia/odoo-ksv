@@ -4,6 +4,7 @@ import { Upload } from 'lucide-react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Select } from '../components/Select';
+import { api } from '../utils/api';
 
 export const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,10 +13,12 @@ export const Register: React.FC = () => {
     email: '',
     phone: '',
     role: '',
+    password: '',
     country: '',
     additionalInfo: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -34,20 +37,31 @@ export const Register: React.FC = () => {
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email';
     if (!formData.phone) newErrors.phone = 'Required';
     if (!formData.role) newErrors.role = 'Required';
+    if (!formData.password) newErrors.password = 'Required';
+    else if (formData.password.length < 8) newErrors.password = 'Must be at least 8 characters';
     if (!formData.country) newErrors.country = 'Required';
     return newErrors;
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-    
-    // Mock successful registration
-    navigate('/dashboard');
+    setSubmitError('');
+    try {
+      const response = await api.post('/auth/register', formData);
+      if (response.data?.success) {
+        localStorage.setItem('token', response.data.data.token);
+        navigate('/dashboard');
+      } else {
+        setSubmitError(response.data?.message || 'Registration failed');
+      }
+    } catch (err: any) {
+      setSubmitError(err.response?.data?.message || 'Registration failed. Please try again.');
+    }
   };
 
   return (
@@ -62,6 +76,11 @@ export const Register: React.FC = () => {
         </div>
 
         <form onSubmit={handleRegister}>
+          {submitError && (
+            <div style={{ color: 'var(--error-color)', fontSize: '0.875rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+              {submitError}
+            </div>
+          )}
           <div className="grid-2-cols">
             <Input 
               label="First Name" 
@@ -113,6 +132,18 @@ export const Register: React.FC = () => {
               onChange={handleChange}
               error={errors.role}
             />
+            <Input 
+              label="Password" 
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+            />
+          </div>
+
+          <div className="grid-2-cols">
             <Input 
               label="Country" 
               name="country"
