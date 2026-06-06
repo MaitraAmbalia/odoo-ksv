@@ -32,11 +32,17 @@ export const createVendor = async (body: any, actorId: string) => {
   return vendor;
 };
 
-export const getVendor = async (id: string) => {
-  return prisma.vendor.findUniqueOrThrow({
+export const getVendor = async (id: string, user: any) => {
+  const vendor = await prisma.vendor.findUniqueOrThrow({
     where: { id },
     include: { user: { select: { email: true, firstName: true, lastName: true, phone: true } } },
   });
+  if (user.role === 'VENDOR') {
+    if (vendor.userId !== user.id) {
+      throw new AppError(403, 'Access denied: You cannot view other vendor profiles');
+    }
+  }
+  return vendor;
 };
 
 export const updateVendor = async (id: string, body: any) => {

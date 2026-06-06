@@ -552,25 +552,85 @@ async function main() {
 
 
   // ─────────────────────────────────────────
-  // Activity Logs & Notifications
+  // GRN Records (for received POs)
   // ─────────────────────────────────────────
-  await prisma.activityLog.createMany({
+  const grn1 = await prisma.gRN.create({
+    data: { poId: po1.id, status: 'VERIFIED', receivedAt: getPastDate(2, 20), createdAt: getPastDate(2, 18) }
+  });
+  await prisma.gRNItem.createMany({
     data: [
-      { userId: officer.id, entityType: 'RFQ', entityId: rfq1.id, action: 'RFQ_CREATED', createdAt: getPastDate(3, 1) },
-      { userId: vendors[1].userId, entityType: 'QUOTATION', entityId: q1Priya.id, action: 'QUOTATION_SUBMITTED', createdAt: getPastDate(3, 5) },
-      { userId: manager.id, entityType: 'APPROVAL', entityId: app1.id, action: 'APPROVAL_APPROVED', createdAt: getPastDate(3, 8) },
-      { userId: officer.id, entityType: 'RFQ', entityId: rfq2.id, action: 'RFQ_CREATED', createdAt: getPastDate(1, 1) },
-      { userId: vendors[2].userId, entityType: 'QUOTATION', entityId: q2Amit.id, action: 'QUOTATION_SUBMITTED', createdAt: getPastDate(1, 5) },
-      { userId: manager.id, entityType: 'APPROVAL', entityId: app2.id, action: 'APPROVAL_APPROVED', createdAt: getPastDate(1, 8) },
-      { userId: officer.id, entityType: 'RFQ', entityId: rfq3.id, action: 'RFQ_PUBLISHED', createdAt: rfq3Date },
-      { userId: vendors[0].userId, entityType: 'QUOTATION', entityId: q3Rajesh.id, action: 'QUOTATION_SUBMITTED', createdAt: new Date() },
+      { grnId: grn1.id, poItemId: po1Item1.id, qtyOrdered: 50, qtyReceived: 50 },
+      { grnId: grn1.id, poItemId: po1Item2.id, qtyOrdered: 5, qtyReceived: 5 },
     ]
   });
 
+  const grn2 = await prisma.gRN.create({
+    data: { poId: poApril.id, status: 'VERIFIED', receivedAt: getPastDate(1, 25), createdAt: getPastDate(1, 22) }
+  });
+  const poAprilItems = await prisma.pOItem.findMany({ where: { poId: poApril.id } });
+  await prisma.gRNItem.create({
+    data: { grnId: grn2.id, poItemId: poAprilItems[0].id, qtyOrdered: 100, qtyReceived: 100 }
+  });
+
+  const grn3 = await prisma.gRN.create({
+    data: { poId: poMay.id, status: 'SUBMITTED', receivedAt: getPastDate(0, 20), createdAt: getPastDate(0, 18) }
+  });
+  const poMayItems = await prisma.pOItem.findMany({ where: { poId: poMay.id } });
+  await prisma.gRNItem.create({
+    data: { grnId: grn3.id, poItemId: poMayItems[0].id, qtyOrdered: 15, qtyReceived: 15 }
+  });
+
+  // ─────────────────────────────────────────
+  // Activity Logs — at least 1 per role
+  // ─────────────────────────────────────────
+  await prisma.activityLog.createMany({
+    data: [
+      // ADMIN actions
+      { userId: admin.id, entityType: 'VENDOR', entityId: vendors[0].id, action: 'VENDOR_APPROVED', meta: JSON.stringify({ companyName: 'Patel Steelworks Pvt Ltd' }), createdAt: getPastDate(4, 2) },
+      { userId: admin.id, entityType: 'VENDOR', entityId: vendors[1].id, action: 'VENDOR_APPROVED', meta: JSON.stringify({ companyName: 'Sharma Electro Supply' }), createdAt: getPastDate(4, 3) },
+      { userId: admin.id, entityType: 'VENDOR', entityId: vendors[2].id, action: 'VENDOR_APPROVED', meta: JSON.stringify({ companyName: 'BuildMart Solutions' }), createdAt: getPastDate(4, 5) },
+      // PROCUREMENT_OFFICER actions
+      { userId: officer.id, entityType: 'RFQ', entityId: rfq1.id, action: 'RFQ_CREATED', createdAt: getPastDate(3, 1) },
+      { userId: officer.id, entityType: 'RFQ', entityId: rfq1.id, action: 'RFQ_PUBLISHED', createdAt: getPastDate(3, 2) },
+      { userId: officer.id, entityType: 'RFQ', entityId: rfq2.id, action: 'RFQ_CREATED', createdAt: getPastDate(1, 1) },
+      { userId: officer.id, entityType: 'RFQ', entityId: rfq2.id, action: 'RFQ_PUBLISHED', createdAt: getPastDate(1, 2) },
+      { userId: officer.id, entityType: 'PO', entityId: po1.id, action: 'PO_ISSUED', meta: JSON.stringify({ poNumber: 'PO-2026-0001' }), createdAt: getPastDate(3, 8) },
+      { userId: officer.id, entityType: 'RFQ', entityId: rfq3.id, action: 'RFQ_PUBLISHED', createdAt: rfq3Date },
+      // MANAGER actions
+      { userId: manager.id, entityType: 'APPROVAL', entityId: app1.id, action: 'APPROVAL_APPROVED', meta: JSON.stringify({ rfqTitle: 'IT & Electrical Hardware Q1' }), createdAt: getPastDate(3, 8) },
+      { userId: manager.id, entityType: 'APPROVAL', entityId: app2.id, action: 'APPROVAL_APPROVED', meta: JSON.stringify({ rfqTitle: 'Office Furniture Procurement Q2' }), createdAt: getPastDate(1, 8) },
+      { userId: manager.id, entityType: 'GRN', entityId: grn1.id, action: 'GRN_VERIFIED', createdAt: getPastDate(2, 20) },
+      // VENDOR actions
+      { userId: vendors[1].userId, entityType: 'QUOTATION', entityId: q1Priya.id, action: 'QUOTATION_SUBMITTED', meta: JSON.stringify({ rfqTitle: 'IT & Electrical Hardware Q1', amount: 177000 }), createdAt: getPastDate(3, 5) },
+      { userId: vendors[2].userId, entityType: 'QUOTATION', entityId: q2Amit.id, action: 'QUOTATION_SUBMITTED', meta: JSON.stringify({ rfqTitle: 'Office Furniture Procurement Q2', amount: 141600 }), createdAt: getPastDate(1, 5) },
+      { userId: vendors[0].userId, entityType: 'QUOTATION', entityId: q3Rajesh.id, action: 'QUOTATION_SUBMITTED', meta: JSON.stringify({ rfqTitle: 'Structural Steel Supply', amount: 413000 }), createdAt: new Date() },
+      { userId: vendors[0].userId, entityType: 'INVOICE', entityId: 'system', action: 'INVOICE_SENT', meta: JSON.stringify({ invoiceNumber: 'INV-2026-0004' }), createdAt: getPastDate(2, 9) },
+      { userId: vendors[1].userId, entityType: 'INVOICE', entityId: 'system', action: 'INVOICE_SENT', meta: JSON.stringify({ invoiceNumber: 'INV-2026-0005' }), createdAt: getPastDate(1, 9) },
+    ]
+  });
+
+  // ─────────────────────────────────────────
+  // Notifications — at least 1 per role
+  // ─────────────────────────────────────────
   await prisma.notification.createMany({
     data: [
-      { userId: manager.id, type: 'APPROVAL_NEEDED', title: 'Approval Required', body: 'Structural Steel Supply requires your approval.', isRead: false, entityType: 'APPROVAL', entityId: q3Rajesh.id },
+      // ADMIN notifications
+      { userId: admin.id, type: 'VENDOR_REGISTERED', title: 'New Vendor Registration', body: 'BuildMart Solutions has registered and is pending approval.', isRead: true, entityType: 'VENDOR', entityId: vendors[2].id, createdAt: getPastDate(4, 4) },
+      { userId: admin.id, type: 'SYSTEM', title: 'System Health Check', body: 'Monthly system audit completed successfully. No issues detected.', isRead: false, createdAt: getPastDate(0, 1) },
+      // PROCUREMENT_OFFICER notifications
+      { userId: officer.id, type: 'QUOTATION_RECEIVED', title: 'New Quotation Received', body: 'Sharma Electro Supply submitted a quotation for IT & Electrical Hardware Q1.', isRead: true, entityType: 'QUOTATION', entityId: q1Priya.id, createdAt: getPastDate(3, 5) },
+      { userId: officer.id, type: 'APPROVAL_DECIDED', title: 'Approval Granted', body: 'Manager approved the quotation for Office Furniture Procurement Q2.', isRead: true, entityType: 'APPROVAL', entityId: app2.id, createdAt: getPastDate(1, 8) },
       { userId: officer.id, type: 'QUOTATION_RECEIVED', title: 'New Quotation Received', body: 'Patel Steelworks submitted a quotation for Structural Steel Supply.', isRead: false, entityType: 'RFQ', entityId: rfq3.id },
+      // MANAGER notifications
+      { userId: manager.id, type: 'APPROVAL_NEEDED', title: 'Approval Required', body: 'Structural Steel Supply requires your approval.', isRead: false, entityType: 'APPROVAL', entityId: q3Rajesh.id },
+      { userId: manager.id, type: 'APPROVAL_NEEDED', title: 'Approval Completed', body: 'You approved the quotation for IT & Electrical Hardware Q1.', isRead: true, entityType: 'APPROVAL', entityId: app1.id, createdAt: getPastDate(3, 8) },
+      // VENDOR notifications (one per vendor)
+      { userId: vendors[0].userId, type: 'RFQ_INVITE', title: 'New RFQ Invitation', body: 'You have been invited to submit a quotation for Structural Steel Supply.', isRead: true, entityType: 'RFQ', entityId: rfq3.id, createdAt: rfq3Date },
+      { userId: vendors[0].userId, type: 'PO_ISSUED', title: 'Purchase Order Issued', body: 'PO-2026-0004 has been issued for April Construction Materials.', isRead: true, entityType: 'PO', entityId: poApril.id, createdAt: getPastDate(2, 8) },
+      { userId: vendors[1].userId, type: 'RFQ_INVITE', title: 'New RFQ Invitation', body: 'You have been invited to submit a quotation for IT & Electrical Hardware Q1.', isRead: true, entityType: 'RFQ', entityId: rfq1.id, createdAt: getPastDate(3, 1) },
+      { userId: vendors[1].userId, type: 'PO_ISSUED', title: 'Purchase Order Issued', body: 'PO-2026-0001 has been issued for IT & Electrical Hardware Q1.', isRead: true, entityType: 'PO', entityId: po1.id, createdAt: getPastDate(3, 8) },
+      { userId: vendors[2].userId, type: 'RFQ_INVITE', title: 'New RFQ Invitation', body: 'You have been invited to submit a quotation for Office Furniture Procurement Q2.', isRead: true, entityType: 'RFQ', entityId: rfq2.id, createdAt: getPastDate(1, 1) },
+      { userId: vendors[2].userId, type: 'INVOICE_OVERDUE', title: 'Invoice Overdue', body: 'Invoice INV-2026-0002 for Office Furniture is overdue by 5 days.', isRead: false, entityType: 'INVOICE', entityId: po2.id },
     ]
   });
 
@@ -579,6 +639,7 @@ async function main() {
   console.log('   Admin:   admin@vendorbridge.com');
   console.log('   Officer: officer@vendorbridge.com');
   console.log('   Manager: manager@vendorbridge.com');
+  console.log('   Vendors: rajesh@steelworks.com / priya@electrosupply.com / amit@buildmart.com');
 }
 
 main()

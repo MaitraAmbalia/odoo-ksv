@@ -19,7 +19,7 @@ export const createRFQ = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getRFQ = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.getRFQ((req.params.id as string));
+  const rfq = await rfqService.getRFQ((req.params.id as string), req.user);
   res.json(apiResponse.success(rfq));
 });
 

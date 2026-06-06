@@ -9,7 +9,7 @@ export const listPOs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getPO = asyncHandler(async (req: Request, res: Response) => {
-  const po = await poService.getPO((req.params.id as string));
+  const po = await poService.getPO((req.params.id as string), req.user);
   res.json(apiResponse.success(po));
 });
 

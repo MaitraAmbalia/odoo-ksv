@@ -56,18 +56,35 @@ export const createRFQ = async (body: any, actorId: string) => {
   return rfq;
 };
 
-export const getRFQ = async (rfqId: string) => {
-  return prisma.rFQ.findUniqueOrThrow({
+export const getRFQ = async (rfqId: string, user: any) => {
+  const rfq = await prisma.rFQ.findUniqueOrThrow({
     where: { id: rfqId },
     include: { 
       items: true, 
       vendorInvites: { include: { vendor: true } }, 
-      quotations: true, 
+      quotations: { include: { vendor: true } }, 
       createdBy: { select: { firstName: true, lastName: true, email: true } },
       parentRfq: true,
       childRfqs: { orderBy: { revision: 'asc' } }
     },
   });
+
+  if (user.role === 'VENDOR') {
+    const vendor = await prisma.vendor.findFirst({ where: { userId: user.id } });
+    if (!vendor) {
+      throw new AppError(403, 'User is not associated with a vendor profile');
+    }
+
+    const isInvited = rfq.vendorInvites.some(invite => invite.vendorId === vendor.id);
+    if (!isInvited) {
+      throw new AppError(403, 'Access denied: You are not invited to this RFQ');
+    }
+
+    rfq.quotations = rfq.quotations.filter(q => q.vendorId === vendor.id);
+    rfq.vendorInvites = rfq.vendorInvites.filter(invite => invite.vendorId === vendor.id);
+  }
+
+  return rfq;
 };
 
 export const updateRFQ = async (rfqId: string, body: any) => {

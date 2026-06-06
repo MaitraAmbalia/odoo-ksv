@@ -77,8 +77,15 @@ export const cancelInvoice = async (invoiceId: string, actorId: string) => {
   return updated;
 };
 
-export const getInvoice = async (id: string) => {
-  return prisma.invoice.findUniqueOrThrow({ where: { id }, include: { items: true, vendor: true, po: true } });
+export const getInvoice = async (id: string, user: any) => {
+  const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id }, include: { items: true, vendor: true, po: true } });
+  if (user.role === 'VENDOR') {
+    const vendor = await prisma.vendor.findFirst({ where: { userId: user.id } });
+    if (!vendor || invoice.vendorId !== vendor.id) {
+      throw new AppError(403, 'Access denied: You cannot view other vendors\' invoices');
+    }
+  }
+  return invoice;
 };
 
 export const listInvoices = async (query: any) => {
@@ -95,7 +102,13 @@ export const listInvoices = async (query: any) => {
   return { invoices, total, page, limit };
 };
 
-export const getInvoicePDFBuffer = async (id: string) => {
+export const getInvoicePDFBuffer = async (id: string, user: any) => {
   const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id }, include: { items: true, vendor: true } });
+  if (user.role === 'VENDOR') {
+    const vendor = await prisma.vendor.findFirst({ where: { userId: user.id } });
+    if (!vendor || invoice.vendorId !== vendor.id) {
+      throw new AppError(403, 'Access denied: You cannot view other vendors\' invoices');
+    }
+  }
   return { buffer: await pdfService.generateInvoicePDF(invoice), invoiceNumber: invoice.invoiceNumber };
 };

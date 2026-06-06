@@ -76,6 +76,40 @@ export const getRecentPOs = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const getRecentActivity = asyncHandler(async (req: Request, res: Response) => {
-  const logs = await prisma.activityLog.findMany({ take: 10, include: { user: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } });
+  const userRole = (req.user as any).role;
+  const userId = (req.user as any).id;
+  let whereClause = {};
+
+  if (userRole === 'VENDOR') {
+    const vendor = await prisma.vendor.findFirst({ where: { userId } });
+    if (!vendor) return res.json(apiResponse.success([]));
+
+    const [quotes, pos, invoices] = await Promise.all([
+      prisma.quotation.findMany({ where: { vendorId: vendor.id }, select: { id: true } }),
+      prisma.purchaseOrder.findMany({ where: { vendorId: vendor.id }, select: { id: true } }),
+      prisma.invoice.findMany({ where: { vendorId: vendor.id }, select: { id: true } }),
+    ]);
+
+    const entityIds = [
+      vendor.id,
+      ...quotes.map(q => q.id),
+      ...pos.map(p => p.id),
+      ...invoices.map(i => i.id)
+    ];
+
+    whereClause = {
+      OR: [
+        { userId: userId },
+        { entityId: { in: entityIds } }
+      ]
+    };
+  }
+
+  const logs = await prisma.activityLog.findMany({ 
+    where: whereClause,
+    take: 10, 
+    include: { user: { select: { firstName: true, lastName: true } } }, 
+    orderBy: { createdAt: 'desc' } 
+  });
   res.json(apiResponse.success(logs));
 });

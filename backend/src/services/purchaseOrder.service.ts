@@ -16,14 +16,21 @@ export const listPOs = async (query: any, user: any) => {
   }
 
   const [pos, total] = await Promise.all([
-    prisma.purchaseOrder.findMany({ where, skip, take: limit, include: { vendor: true, quotation: true, items: { include: { rfqItem: true } } }, orderBy: { issuedAt: 'desc' } }),
+    prisma.purchaseOrder.findMany({ where, skip, take: limit, include: { vendor: true, quotation: { include: { rfq: { select: { title: true } } } }, items: { include: { rfqItem: true } } }, orderBy: { issuedAt: 'desc' } }),
     prisma.purchaseOrder.count({ where }),
   ]);
   return { pos, total, page, limit };
 };
 
-export const getPO = async (id: string) => {
-  return prisma.purchaseOrder.findUniqueOrThrow({ where: { id }, include: { vendor: true, quotation: true, items: { include: { rfqItem: true } }, approval: true } });
+export const getPO = async (id: string, user: any) => {
+  const po = await prisma.purchaseOrder.findUniqueOrThrow({ where: { id }, include: { vendor: true, quotation: true, items: { include: { rfqItem: true } }, approval: true } });
+  if (user.role === 'VENDOR') {
+    const vendor = await prisma.vendor.findFirst({ where: { userId: user.id } });
+    if (!vendor || po.vendorId !== vendor.id) {
+      throw new AppError(403, 'Access denied: You cannot view other vendors\' purchase orders');
+    }
+  }
+  return po;
 };
 
 export const cancelPO = async (id: string, actorId: string) => {

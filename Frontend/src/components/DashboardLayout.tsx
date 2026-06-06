@@ -12,6 +12,7 @@ import {
   BarChart3, 
   Activity 
 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -68,8 +69,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             })}
           </nav>
         </div>
-        <div className="px-3 pt-4 border-t border-border/60">
+        <div className="px-3 pt-4 border-t border-border/60 flex items-center justify-between">
           <p className="text-xs text-muted-foreground font-mono">VB-LOCAL v1.0.0</p>
+          <ThemeToggle />
         </div>
       </aside>
 

@@ -7,6 +7,7 @@ import { Select } from '../components/Select';
 import { api } from '../utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -80,7 +81,10 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background/50 py-12 px-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-background/50 py-12 px-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-[700px] bg-card/40 backdrop-blur-md border-border shadow-xl">
         <CardHeader className="space-y-1 flex flex-col items-center">
           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">

@@ -4,6 +4,11 @@ import * as quotationService from '../services/quotation.service';
 import { apiResponse } from '../utils/apiResponse';
 import { AppError } from '../middlewares/errorHandler';
 
+export const listAllQuotations = asyncHandler(async (req: Request, res: Response) => {
+  const result = await quotationService.listAllQuotations(req.query);
+  res.json(apiResponse.paginated(result.quotations, { page: result.page, limit: result.limit, total: result.total }));
+});
+
 export const createQuotation = asyncHandler(async (req: Request, res: Response) => {
   const vendor = await (await import('../config/db')).default.vendor.findUnique({ where: { userId: req.user.id } });
   if (!vendor) throw new AppError(404, 'Vendor profile not found');
@@ -26,7 +31,7 @@ export const withdrawQuotation = asyncHandler(async (req: Request, res: Response
 });
 
 export const getQuotation = asyncHandler(async (req: Request, res: Response) => {
-  const quotation = await quotationService.getQuotation((req.params.id as string));
+  const quotation = await quotationService.getQuotation((req.params.id as string), req.user);
   res.json(apiResponse.success(quotation));
 });
 

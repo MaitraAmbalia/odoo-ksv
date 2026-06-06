@@ -1,29 +1,118 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/Button';
-import { Input } from '../components/Input';
+
+import api from '../utils/api';
 
 export const PurchaseOrders: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
 
-  const tabs = [
-    { label: 'All', count: 0 },
-    { label: 'Issued', count: 0 },
-    { label: 'Partially Received', count: 0 },
-    { label: 'Received', count: 0 },
-    { label: 'Cancelled', count: 0 }
-  ];
-
-  const purchaseOrders: any[] = [];
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   const isVendor = user?.role === 'VENDOR';
 
+  const fetchPOs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/purchase-orders');
+      setPurchaseOrders(res.data.data.data || res.data.data || []);
+    } catch (error) {
+      console.error('Error fetching purchase orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPOs();
+  }, []);
+
+  // Close action menu on outside click
+  useEffect(() => {
+    const handleClick = () => setOpenActionMenuId(null);
+    if (openActionMenuId) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [openActionMenuId]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ISSUED': return '#3B82F6';
+      case 'PARTIALLY_RECEIVED': return '#F59E0B';
+      case 'RECEIVED': return '#10B981';
+      case 'CANCELLED': return '#EF4444';
+      default: return 'var(--text-muted)';
+    }
+  };
+
+  // Filter purchase orders
+  const filteredPOs = purchaseOrders.filter(po => {
+    const vendorName = po.vendor?.companyName || '';
+    const poNumber = po.poNumber || '';
+    const rfqTitle = po.quotation?.rfq?.title || po.approval?.rfq?.title || '';
+    const matchesSearch =
+      vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      poNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rfqTitle.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesTab =
+      activeTab === 'All' ||
+      po.status === activeTab.toUpperCase().replace(/ /g, '_');
+
+    return matchesSearch && matchesTab;
+  });
+
+  const tabs = [
+    { label: 'All', count: purchaseOrders.length },
+    { label: 'ISSUED', count: purchaseOrders.filter(po => po.status === 'ISSUED').length },
+    { label: 'PARTIALLY_RECEIVED', count: purchaseOrders.filter(po => po.status === 'PARTIALLY_RECEIVED').length },
+    { label: 'RECEIVED', count: purchaseOrders.filter(po => po.status === 'RECEIVED').length },
+    { label: 'CANCELLED', count: purchaseOrders.filter(po => po.status === 'CANCELLED').length }
+  ];
+
   const toggleActionMenu = (id: string) => {
     setOpenActionMenuId(openActionMenuId === id ? null : id);
+  };
+
+  const handleCancelPO = async (id: string) => {
+    if (window.confirm('Are you sure you want to cancel this purchase order?')) {
+      try {
+        await api.patch(`/purchase-orders/${id}/cancel`);
+        fetchPOs();
+      } catch (e) {
+        alert('Failed to cancel PO');
+      }
+    }
+    setOpenActionMenuId(null);
+  };
+
+  const handleGenerateInvoice = async (poId: string) => {
+    try {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      await api.post(`/invoices`, { 
+        poId, 
+        dueDate: dueDate.toISOString(),
+        taxType: 'GST_INTRA',
+        gstRate: 18,
+        notes: 'Generated from PO'
+      });
+      alert('Invoice generated successfully');
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Failed to generate invoice');
+    }
+    setOpenActionMenuId(null);
+  };
+
+  const handleViewDocument = (poNumber: string) => {
+    alert(`Document viewer for ${poNumber} is under construction.`);
+    setOpenActionMenuId(null);
   };
 
   return (
@@ -38,13 +127,12 @@ export const PurchaseOrders: React.FC = () => {
       </header>
 
       {/* Search Bar */}
-      <section className="dashboard-card float-animation" style={{ padding: '1rem', marginBottom: '2rem' }}>
-        <Input 
-          label=""
+      <section className="dashboard-card float-animation" style={{ padding: '0.5rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
+        <input 
           placeholder={isVendor ? "Search by PO Number or RFQ Title..." : "Search by PO Number, Vendor, or RFQ Title..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none' }}
+          style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none', color: 'var(--text-main)', fontSize: '0.9rem', padding: '0.5rem 0' }}
         />
       </section>
 
@@ -65,7 +153,7 @@ export const PurchaseOrders: React.FC = () => {
               whiteSpace: 'nowrap'
             }}
           >
-            {tab.label} ({tab.count})
+            {tab.label.replace(/_/g, ' ')} ({tab.count})
           </button>
         ))}
       </section>
@@ -86,35 +174,43 @@ export const PurchaseOrders: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {purchaseOrders.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={isVendor ? 6 : 7} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    Loading purchase orders...
+                  </td>
+                </tr>
+              ) : filteredPOs.length === 0 ? (
                 <tr>
                   <td colSpan={isVendor ? 6 : 7} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No purchase orders found.
                   </td>
                 </tr>
               ) : (
-                purchaseOrders.map((row) => (
+                filteredPOs.map((row) => (
                   <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>{row.poNumber}</td>
-                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>}
-                    <td style={{ padding: '1.5rem' }}>{row.rfqTitle}</td>
-                    <td style={{ padding: '1.5rem' }}>₹{row.grandTotal}</td>
-                    <td style={{ padding: '1.5rem' }}>{row.issuedDate}</td>
+                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendor?.companyName || 'N/A'}</td>}
+                    <td style={{ padding: '1.5rem' }}>{row.quotation?.rfq?.title || row.approval?.rfq?.title || 'N/A'}</td>
+                    <td style={{ padding: '1.5rem' }}>₹{row.quotation?.grandTotal?.toLocaleString('en-IN') || 0}</td>
+                    <td style={{ padding: '1.5rem' }}>{new Date(row.issuedAt).toLocaleDateString()}</td>
                     <td style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div className="glow-point" style={{ backgroundColor: row.statusColor, boxShadow: `0 0 10px ${row.statusColor}` }} />
-                      {row.status}
+                      <div className="glow-point" style={{ backgroundColor: getStatusColor(row.status), boxShadow: `0 0 10px ${getStatusColor(row.status)}` }} />
+                      {row.status?.replace(/_/g, ' ')}
                     </td>
                     <td style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
                       <Button 
                         variant="secondary" 
                         style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
-                        onClick={() => toggleActionMenu(row.id)}
+                        onClick={(e) => { e.stopPropagation(); toggleActionMenu(row.id); }}
                       >
                         Options
                       </Button>
                       
                       {openActionMenuId === row.id && (
-                        <div style={{
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
                           position: 'absolute',
                           top: '100%',
                           right: '1.5rem',
@@ -128,9 +224,24 @@ export const PurchaseOrders: React.FC = () => {
                           minWidth: '150px',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                         }}>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>View Document</button>
-                          {isVendor && <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Generate Invoice</button>}
-                          {!isVendor && <button style={{ background: 'transparent', border: 'none', color: '#EF4444', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Cancel PO</button>}
+                          <button 
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%', borderRadius: '0.25rem' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => handleViewDocument(row.poNumber)}
+                          >View Document</button>
+                          {isVendor && <button 
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%', borderRadius: '0.25rem' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => handleGenerateInvoice(row.id)}
+                          >Generate Invoice</button>}
+                          {!isVendor && row.status === 'ISSUED' && <button 
+                            style={{ background: 'transparent', border: 'none', color: '#EF4444', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%', borderRadius: '0.25rem' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => handleCancelPO(row.id)}
+                          >Cancel PO</button>}
                         </div>
                       )}
                     </td>

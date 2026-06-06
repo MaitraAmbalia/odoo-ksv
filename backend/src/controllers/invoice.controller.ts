@@ -14,7 +14,7 @@ export const generateInvoice = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const getInvoice = asyncHandler(async (req: Request, res: Response) => {
-  const invoice = await invoiceService.getInvoice((req.params.id as string));
+  const invoice = await invoiceService.getInvoice((req.params.id as string), req.user);
   res.json(apiResponse.success(invoice));
 });
 
@@ -29,7 +29,7 @@ export const markPaid = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const downloadPDF = asyncHandler(async (req: Request, res: Response) => {
-  const { buffer, invoiceNumber } = await invoiceService.getInvoicePDFBuffer((req.params.id as string));
+  const { buffer, invoiceNumber } = await invoiceService.getInvoicePDFBuffer((req.params.id as string), req.user);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${invoiceNumber}.pdf"`);
   res.send(buffer);

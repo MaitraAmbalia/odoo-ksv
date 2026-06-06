@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Input } from '../components/Input';
 import { Select } from '../components/Select';
@@ -10,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Trash2, Plus, UploadCloud, X } from 'lucide-react';
 
 export const CreateRFQ: React.FC = () => {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -32,12 +34,28 @@ export const CreateRFQ: React.FC = () => {
         const res = await api.get('/vendors');
         const vendors = res.data.data.data || res.data.data || [];
         setAllVendors(vendors);
+
+        // Handle preselected vendor from navigation state
+        const preselected = location.state?.preselectedVendor;
+        if (preselected) {
+          setFormData(prev => ({ ...prev, category: preselected.category || '' }));
+          
+          // Filter available vendors for this category
+          const categoryLower = (preselected.category || '').toLowerCase();
+          const filtered = vendors.filter(
+            (v: any) => v.category?.toLowerCase() === categoryLower && v.status === 'ACTIVE'
+          );
+          setAvailableVendors(filtered);
+          
+          // Preselect the vendor
+          setAssignedVendors([{ id: preselected.id, name: preselected.companyName }]);
+        }
       } catch (err) {
         console.error('Failed to fetch vendors:', err);
       }
     };
     fetchVendors();
-  }, []);
+  }, [location.state]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

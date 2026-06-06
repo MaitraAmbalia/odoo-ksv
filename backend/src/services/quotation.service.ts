@@ -2,6 +2,32 @@ import prisma from '../config/db';
 import { AppError } from '../middlewares/errorHandler';
 import { auditLog, Actions } from '../utils/auditLog';
 import { calculateGST } from '../utils/calculateTax';
+import { getPagination } from '../utils/pagination';
+
+export const listAllQuotations = async (query: any) => {
+  const { status, search } = query;
+  const { page, limit, skip } = getPagination(query);
+
+  const where: any = {};
+  if (status) where.status = status;
+  if (search) where.OR = [
+    { vendor: { companyName: { contains: search, mode: 'insensitive' } } },
+    { rfq: { title: { contains: search, mode: 'insensitive' } } },
+  ];
+
+  const [quotations, total] = await Promise.all([
+    prisma.quotation.findMany({
+      where, skip, take: limit,
+      include: {
+        vendor: { select: { companyName: true } },
+        rfq: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.quotation.count({ where }),
+  ]);
+  return { quotations, total, page, limit };
+};
 
 export const createQuotation = async (rfqId: string, body: any, vendorId: string) => {
   const rfq = await prisma.rFQ.findUniqueOrThrow({ where: { id: rfqId }, include: { items: true } });
@@ -70,8 +96,15 @@ export const withdrawQuotation = async (quotationId: string, vendorId: string) =
   return updated;
 };
 
-export const getQuotation = async (id: string) => {
-  return prisma.quotation.findUniqueOrThrow({ where: { id }, include: { items: { include: { rfqItem: true } }, vendor: true } });
+export const getQuotation = async (id: string, user: any) => {
+  const q = await prisma.quotation.findUniqueOrThrow({ where: { id }, include: { items: { include: { rfqItem: true } }, vendor: true } });
+  if (user.role === 'VENDOR') {
+    const vendor = await prisma.vendor.findFirst({ where: { userId: user.id } });
+    if (!vendor || q.vendorId !== vendor.id) {
+      throw new AppError(403, 'Access denied: You cannot view other vendors\' quotations');
+    }
+  }
+  return q;
 };
 
 export const getMyQuotations = async (vendorId: string) => {

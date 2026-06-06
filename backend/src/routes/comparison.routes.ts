@@ -8,6 +8,6 @@ const router = Router();
 router.get('/:rfqId/quotations',         authenticate, authorize('ADMIN','PROCUREMENT_OFFICER','MANAGER'), ctrl.getQuotationsForRFQ);
 router.post('/:rfqId/quotations',        authenticate, authorize('VENDOR'),                                ctrl.createQuotation);
 router.get('/:rfqId/comparison',         authenticate, authorize('ADMIN','PROCUREMENT_OFFICER','MANAGER'), ctrl.getComparison);
-router.post('/:rfqId/comparison/select', authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.selectQuotation);
+router.post('/:rfqId/comparison/select', authenticate, authorize('ADMIN','PROCUREMENT_OFFICER','MANAGER'),           ctrl.selectQuotation);
 
 export default router;

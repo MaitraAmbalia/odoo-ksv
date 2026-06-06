@@ -14,7 +14,7 @@ export const createVendor = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const getVendor = asyncHandler(async (req: Request, res: Response) => {
-  const vendor = await vendorService.getVendor((req.params.id as string));
+  const vendor = await vendorService.getVendor((req.params.id as string), req.user);
   res.json(apiResponse.success(vendor));
 });
 
