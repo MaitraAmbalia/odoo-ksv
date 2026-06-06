@@ -19,8 +19,10 @@ export const Login: React.FC = () => {
       return;
     }
     setError('');
-    setSuccessMsg('Successfully logged in! (Mock Session)');
-    console.log('Logging in with', email, password);
+    setSuccessMsg('Successfully logged in! Redirecting...');
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 800);
   };
 
   return (

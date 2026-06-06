@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Select } from '../components/Select';
@@ -46,8 +46,8 @@ export const Register: React.FC = () => {
       return;
     }
     
-    console.log('Registering user', formData);
-    // navigate('/login'); // Mock redirect to login
+    // Mock successful registration
+    navigate('/dashboard');
   };
 
   return (
