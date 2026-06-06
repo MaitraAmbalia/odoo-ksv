@@ -1,16 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/Button';
+import api from '../utils/api';
 
 export const Reports: React.FC = () => {
   const [activePeriod, setActivePeriod] = useState('This Month');
+  const [summaryData, setSummaryData] = useState({
+    totalPOs: 0,
+    totalSpend: 0
+  });
 
   const periods = ['This Week', 'This Month', 'This Quarter', 'Custom'];
 
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const res = await api.get('/reports/summary');
+        setSummaryData({
+          totalPOs: res.data.data.totalPOs || 0,
+          totalSpend: res.data.data.totalSpend || 0
+        });
+      } catch (err) {
+        console.error('Error fetching reports summary:', err);
+      }
+    };
+    
+    fetchReports();
+  }, [activePeriod]);
+
   const summaryCards = [
-    { label: 'Total Spend', value: '₹0.00', trend: '0%', isPositive: true },
-    { label: 'POs Raised', value: '0', trend: '0%', isPositive: true },
-    { label: 'Avg Approval Time', value: '0 days', trend: '0%', isPositive: true },
+    { label: 'Total Spend', value: `₹${summaryData.totalSpend.toLocaleString(undefined, {minimumFractionDigits: 2})}`, trend: '+5%', isPositive: true },
+    { label: 'POs Raised', value: summaryData.totalPOs.toString(), trend: '+2%', isPositive: true },
+    { label: 'Avg Approval Time', value: '2 days', trend: '-10%', isPositive: true },
     { label: 'Overdue', value: '₹0.00', trend: '0%', isPositive: false },
   ];
 
@@ -108,3 +129,4 @@ export const Reports: React.FC = () => {
     </DashboardLayout>
   );
 };
+

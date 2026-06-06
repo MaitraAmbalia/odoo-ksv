@@ -17,6 +17,27 @@ export const listRFQs = async (query: any) => {
   return { rfqs, total, page, limit };
 };
 
+export const listInvitedRFQs = async (actorId: string, query: any) => {
+  const { status, search } = query;
+  const { page, limit, skip } = getPagination(query);
+  
+  const vendor = await prisma.vendor.findFirst({ where: { userId: actorId } });
+  if (!vendor) throw new AppError(403, 'User is not associated with a vendor profile');
+
+  const where: any = {
+    vendorInvites: { some: { vendorId: vendor.id } },
+    status: { not: 'DRAFT' } // Vendors shouldn't see drafts
+  };
+  if (status) where.status = status;
+  if (search) where.title = { contains: search, mode: 'insensitive' };
+
+  const [rfqs, total] = await Promise.all([
+    prisma.rFQ.findMany({ where, skip, take: limit, include: { items: true, vendorInvites: true, createdBy: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: 'desc' } }),
+    prisma.rFQ.count({ where }),
+  ]);
+  return { rfqs, total, page, limit };
+};
+
 export const createRFQ = async (body: any, actorId: string) => {
   const { items, vendorIds, ...rfqData } = body;
   const rfq = await prisma.rFQ.create({

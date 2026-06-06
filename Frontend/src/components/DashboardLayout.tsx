@@ -8,17 +8,26 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
 
-  const navItems = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Vendors', path: '/vendors' },
-    { label: "RFQ's", path: '/rfqs' },
-    { label: 'Quotations', path: '/quotations' },
-    { label: 'Approvals', path: '/approvals' },
-    { label: 'Purchase Orders', path: '/purchase-orders' },
-    { label: 'Invoices', path: '/invoices' },
-    { label: 'Reports', path: '/reports' },
-    { label: 'Activity', path: '/activity' }
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isVendor = user?.role === 'VENDOR';
+
+  const allNavItems = [
+    { label: 'Dashboard', path: '/dashboard', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { label: 'Vendors', path: '/vendors', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { label: "RFQ's", path: '/rfqs', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { label: 'Quotations', path: '/quotations', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { label: 'Approvals', path: '/approvals', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] },
+    { label: 'Purchase Orders', path: '/purchase-orders', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { label: 'Invoices', path: '/invoices', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER', 'VENDOR'] },
+    { label: 'Reports', path: '/reports', roles: ['ADMIN', 'MANAGER'] },
+    { label: 'Activity', path: '/activity', roles: ['ADMIN', 'MANAGER', 'PROCUREMENT_OFFICER'] }
   ];
+
+  const navItems = allNavItems.filter(item => {
+    if (!user) return true; // Fallback if no role is found
+    return item.roles.includes(user.role);
+  });
 
   return (
     <div className="dashboard-layout animate-fade-in">

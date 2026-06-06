@@ -19,6 +19,10 @@ export const Invoices: React.FC = () => {
 
   const invoices: any[] = [];
 
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isVendor = user?.role === 'VENDOR';
+
   const toggleActionMenu = (id: string) => {
     setOpenActionMenuId(openActionMenuId === id ? null : id);
   };
@@ -27,9 +31,9 @@ export const Invoices: React.FC = () => {
     <DashboardLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>Invoices</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>{isVendor ? 'My Invoices' : 'Invoices'}</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Manage billing and payment statuses
+            {isVendor ? 'Manage your billing and payments' : 'Manage billing and payment statuses'}
           </p>
         </div>
       </header>
@@ -38,7 +42,7 @@ export const Invoices: React.FC = () => {
       <section className="dashboard-card float-animation" style={{ padding: '1rem', marginBottom: '2rem' }}>
         <Input 
           label=""
-          placeholder="Search by Invoice Number, PO Number, or Vendor..."
+          placeholder={isVendor ? "Search by Invoice Number or PO Number..." : "Search by Invoice Number, PO Number, or Vendor..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none' }}
@@ -75,7 +79,7 @@ export const Invoices: React.FC = () => {
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Invoice #</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>PO #</th>
-                <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor</th>
+                {!isVendor && <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor</th>}
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Amount</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Due Date</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Status</th>
@@ -85,7 +89,7 @@ export const Invoices: React.FC = () => {
             <tbody>
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={isVendor ? 6 : 7} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No invoices found.
                   </td>
                 </tr>
@@ -94,7 +98,7 @@ export const Invoices: React.FC = () => {
                   <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>{row.invoiceNumber}</td>
                     <td style={{ padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>{row.poNumber}</td>
-                    <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>
+                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>}
                     <td style={{ padding: '1.5rem' }}>₹{row.amount}</td>
                     <td style={{ padding: '1.5rem' }}>{row.dueDate}</td>
                     <td style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -126,8 +130,8 @@ export const Invoices: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                         }}>
                           <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>View Document</button>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Send via Email</button>
-                          <button style={{ background: 'transparent', border: 'none', color: '#10B981', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Mark as Paid</button>
+                          {!isVendor && <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Send via Email</button>}
+                          {!isVendor && <button style={{ background: 'transparent', border: 'none', color: '#10B981', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Mark as Paid</button>}
                         </div>
                       )}
                     </td>
