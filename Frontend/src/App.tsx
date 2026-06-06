@@ -3,6 +3,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Vendors } from './pages/Vendors';
+import { CreateRFQ } from './pages/CreateRFQ';
 import './index.css';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/vendors" element={<Vendors />} />
+        <Route path="/rfqs" element={<CreateRFQ />} />
       </Routes>
     </Router>
   );
