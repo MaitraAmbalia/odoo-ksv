@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/Button';
-import { Input } from '../components/Input';
 
 export const Approvals: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Pending');
