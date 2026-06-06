@@ -15,11 +15,23 @@ export const Register: React.FC = () => {
     role: '',
     password: '',
     country: '',
-    additionalInfo: ''
+    additionalInfo: '',
+    avatar: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState('');
   const navigate = useNavigate();
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, avatar: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -68,9 +80,24 @@ export const Register: React.FC = () => {
     <div className="min-h-screen flex-center animate-fade-in" style={{ padding: '2rem 0' }}>
       <div className="glass-card" style={{ width: '100%', maxWidth: '700px' }}>
         <div className="flex-col" style={{ alignItems: 'center', marginBottom: '2.5rem' }}>
-          <div className="photo-upload" title="Upload Photo">
-            <Upload size={32} />
+          <div 
+            className="photo-upload" 
+            title="Upload Photo"
+            onClick={() => document.getElementById('avatar-input')?.click()}
+          >
+            {formData.avatar ? (
+              <img src={formData.avatar} alt="Avatar Preview" className="photo-preview" />
+            ) : (
+              <Upload size={32} />
+            )}
           </div>
+          <input 
+            id="avatar-input"
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleAvatarChange}
+          />
           <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Create Account</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Join VendorBridge as Admin or Vendor</p>
         </div>
