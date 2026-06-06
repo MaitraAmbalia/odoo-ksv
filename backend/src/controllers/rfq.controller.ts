@@ -19,41 +19,46 @@ export const createRFQ = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getRFQ = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.getRFQ(req.params.id as string);
+  const rfq = await rfqService.getRFQ((req.params.id as string));
   res.json(apiResponse.success(rfq));
 });
 
 export const updateRFQ = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.updateRFQ(req.params.id as string, req.body);
+  const rfq = await rfqService.updateRFQ((req.params.id as string), req.body);
   res.json(apiResponse.success(rfq, 'RFQ updated'));
 });
 
 export const deleteRFQ = asyncHandler(async (req: Request, res: Response) => {
-  await rfqService.deleteRFQ(req.params.id as string);
+  await rfqService.deleteRFQ((req.params.id as string));
   res.json(apiResponse.success(null, 'RFQ deleted'));
 });
 
 export const publishRFQ = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.publishRFQ(req.params.id as string, req.user.id);
+  const rfq = await rfqService.publishRFQ((req.params.id as string), req.user.id);
   res.json(apiResponse.success(rfq, 'RFQ published'));
 });
 
 export const closeRFQ = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.closeRFQ(req.params.id as string, req.user.id);
+  const rfq = await rfqService.closeRFQ((req.params.id as string), req.user.id);
   res.json(apiResponse.success(rfq, 'RFQ closed'));
 });
 
 export const cancelRFQ = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.cancelRFQ(req.params.id as string, req.user.id);
+  const rfq = await rfqService.cancelRFQ((req.params.id as string), req.user.id);
   res.json(apiResponse.success(rfq, 'RFQ cancelled'));
 });
 
 export const addVendors = asyncHandler(async (req: Request, res: Response) => {
-  const rfq = await rfqService.addVendors(req.params.id as string, req.body.vendorIds, req.user.id);
+  const rfq = await rfqService.addVendors((req.params.id as string), req.body.vendorIds, req.user.id);
   res.json(apiResponse.success(rfq, 'Vendors added'));
 });
 
 export const removeVendor = asyncHandler(async (req: Request, res: Response) => {
-  await rfqService.removeVendor(req.params.id as string, req.params.vendorId as string);
+  await rfqService.removeVendor((req.params.id as string), (req.params.vendorId as string));
   res.json(apiResponse.success(null, 'Vendor removed'));
+});
+
+export const amendRFQ = asyncHandler(async (req: Request, res: Response) => {
+  const rfq = await rfqService.amendRFQ((req.params.id as string), req.body, req.user.id);
+  res.status(201).json(apiResponse.success(rfq, 'RFQ amended successfully'));
 });

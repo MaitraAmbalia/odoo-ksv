@@ -14,28 +14,28 @@ export const generateInvoice = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const getInvoice = asyncHandler(async (req: Request, res: Response) => {
-  const invoice = await invoiceService.getInvoice(req.params.id as string);
+  const invoice = await invoiceService.getInvoice((req.params.id as string));
   res.json(apiResponse.success(invoice));
 });
 
 export const sendInvoice = asyncHandler(async (req: Request, res: Response) => {
-  await invoiceService.sendInvoice(req.params.id as string, req.user.id);
+  await invoiceService.sendInvoice((req.params.id as string), req.user.id);
   res.json(apiResponse.success(null, 'Invoice sent'));
 });
 
 export const markPaid = asyncHandler(async (req: Request, res: Response) => {
-  const invoice = await invoiceService.markPaid(req.params.id as string, req.user.id);
+  const invoice = await invoiceService.markPaid((req.params.id as string), req.user.id);
   res.json(apiResponse.success(invoice, 'Invoice marked as paid'));
 });
 
 export const downloadPDF = asyncHandler(async (req: Request, res: Response) => {
-  const { buffer, invoiceNumber } = await invoiceService.getInvoicePDFBuffer(req.params.id as string);
+  const { buffer, invoiceNumber } = await invoiceService.getInvoicePDFBuffer((req.params.id as string));
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${invoiceNumber}.pdf"`);
   res.send(buffer);
 });
 
 export const cancelInvoice = asyncHandler(async (req: Request, res: Response) => {
-  const invoice = await invoiceService.cancelInvoice(req.params.id as string, req.user.id);
+  const invoice = await invoiceService.cancelInvoice((req.params.id as string), req.user.id);
   res.json(apiResponse.success(invoice, 'Invoice cancelled'));
 });

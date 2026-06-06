@@ -52,7 +52,6 @@ export const getSummary = asyncHandler(async (req: Request, res: Response) => {
     totalSpendThisMonth: spendResult._sum.grandTotal ?? 0,
   }));
 });
-
 export const getRecentPOs = asyncHandler(async (req: Request, res: Response) => {
   const userRole = (req.user as any).role;
   const userId = (req.user as any).id;

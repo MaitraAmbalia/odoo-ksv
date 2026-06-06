@@ -15,5 +15,6 @@ router.post('/:id/close',              authenticate, authorize('ADMIN','PROCUREM
 router.post('/:id/cancel',             authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.cancelRFQ);
 router.post('/:id/vendors',            authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.addVendors);
 router.delete('/:id/vendors/:vendorId',authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.removeVendor);
+router.post('/:id/amend',              authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.amendRFQ);
 
 export default router;

@@ -59,7 +59,14 @@ export const createRFQ = async (body: any, actorId: string) => {
 export const getRFQ = async (rfqId: string) => {
   return prisma.rFQ.findUniqueOrThrow({
     where: { id: rfqId },
-    include: { items: true, vendorInvites: { include: { vendor: true } }, quotations: true, createdBy: { select: { firstName: true, lastName: true, email: true } } },
+    include: { 
+      items: true, 
+      vendorInvites: { include: { vendor: true } }, 
+      quotations: true, 
+      createdBy: { select: { firstName: true, lastName: true, email: true } },
+      parentRfq: true,
+      childRfqs: { orderBy: { revision: 'asc' } }
+    },
   });
 };
 
@@ -132,4 +139,94 @@ export const addVendors = async (rfqId: string, vendorIds: string[], actorId: st
 
 export const removeVendor = async (rfqId: string, vendorId: string) => {
   await prisma.rFQVendorInvite.delete({ where: { rfqId_vendorId: { rfqId, vendorId } } });
+};
+
+export const amendRFQ = async (rfqId: string, body: any, actorId: string) => {
+  const { items, amendmentNote, deadline } = body;
+  
+  const oldRfq = await prisma.rFQ.findUniqueOrThrow({
+    where: { id: rfqId },
+    include: { vendorInvites: true },
+  });
+
+  if (oldRfq.status !== 'PUBLISHED') throw new AppError(400, 'Only PUBLISHED RFQs can be amended');
+
+  const result = await prisma.$transaction(async (tx) => {
+    // Mark old RFQ as AMENDED
+    await tx.rFQ.update({
+      where: { id: oldRfq.id },
+      data: { status: 'AMENDED' },
+    });
+
+    // Supersede active quotations for the old RFQ
+    await tx.quotation.updateMany({
+      where: { rfqId: oldRfq.id, status: 'SUBMITTED' },
+      data: { status: 'SUPERSEDED' },
+    });
+
+    // Create the new RFQ revision
+    const newRfq = await tx.rFQ.create({
+      data: {
+        title: oldRfq.title,
+        category: oldRfq.category,
+        description: oldRfq.description,
+        createdById: oldRfq.createdById,
+        revision: oldRfq.revision + 1,
+        parentRfqId: oldRfq.id,
+        amendmentNote: amendmentNote,
+        deadline: new Date(deadline || oldRfq.deadline),
+        status: 'PUBLISHED', // New revision starts as published
+        items: {
+          create: items.map((item: any) => ({
+            itemName: item.itemName,
+            quantity: Number(item.quantity),
+            unit: item.unit
+          }))
+        },
+        vendorInvites: {
+          create: oldRfq.vendorInvites.map(invite => ({
+            vendorId: invite.vendorId,
+            status: 'PENDING'
+          }))
+        }
+      },
+      include: { items: true, vendorInvites: true },
+    });
+
+    // Send notifications to all invited vendors
+    const notifications = oldRfq.vendorInvites.map(invite => {
+      // Find the user ID for this vendor
+      return tx.vendor.findUnique({ where: { id: invite.vendorId }, select: { userId: true } })
+        .then(vendor => {
+          if (vendor) {
+            return tx.notification.create({
+              data: {
+                userId: vendor.userId,
+                type: 'RFQ_INVITE',
+                title: `RFQ Amended: ${newRfq.title}`,
+                body: `Revision ${newRfq.revision} published. Note: ${amendmentNote || 'Please review changes'}. Your previous quotation is superseded.`,
+                entityType: 'RFQ',
+                entityId: newRfq.id,
+              }
+            });
+          }
+        });
+    });
+    
+    await Promise.all(notifications);
+
+    await tx.activityLog.create({
+      data: {
+        userId: actorId,
+        entityType: 'RFQ',
+        entityId: newRfq.id,
+        action: Actions.RFQ_AMENDED,
+        meta: { parentRfqId: oldRfq.id, revision: newRfq.revision }
+      }
+    });
+
+    return newRfq;
+  });
+
+  return result;
 };

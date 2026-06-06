@@ -154,7 +154,7 @@ export const Vendors: React.FC = () => {
                         style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                         onClick={() => toggleActionMenu(row.id)}
                       >
-                        View
+                        Action ▾
                       </Button>
                       
                       {openActionMenuId === row.id && (
@@ -172,9 +172,35 @@ export const Vendors: React.FC = () => {
                           minWidth: '150px',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                         }}>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>View Profile</button>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Change Status</button>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Request Quotation</button>
+                          <button 
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                            onClick={() => { alert(`Viewing profile for ${row.companyName}`); setOpenActionMenuId(null); }}
+                          >
+                            View Profile
+                          </button>
+                          <button 
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                            onClick={async () => {
+                              const newStatus = row.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE';
+                              if (window.confirm(`Change status of ${row.companyName} to ${newStatus}?`)) {
+                                try {
+                                  await api.patch(`/vendors/${row.id}/status`, { status: newStatus });
+                                  fetchVendors();
+                                } catch (e) {
+                                  alert('Failed to change status');
+                                }
+                              }
+                              setOpenActionMenuId(null);
+                            }}
+                          >
+                            Change Status
+                          </button>
+                          <button 
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                            onClick={() => { alert(`Requesting quotation from ${row.companyName}`); setOpenActionMenuId(null); }}
+                          >
+                            Request Quotation
+                          </button>
                         </div>
                       )}
                     </td>
