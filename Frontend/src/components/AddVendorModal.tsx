@@ -14,6 +14,8 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose 
     orgName: '',
     email: '',
     phone: '',
+    gstNumber: '',
+    currentStatus: '',
     equipmentType: ''
   });
 
@@ -74,6 +76,30 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose 
               value={formData.phone} 
               onChange={handleChange} 
               placeholder="+1 234 567 8900"
+              required
+            />
+          </div>
+          <div className="grid-2-cols">
+            <Input 
+              label="GST Number" 
+              name="gstNumber" 
+              value={formData.gstNumber} 
+              onChange={handleChange} 
+              placeholder="e.g. 27AABCS1429B1Z0"
+              required
+            />
+            <Select 
+              label="Current Status" 
+              name="currentStatus" 
+              value={formData.currentStatus} 
+              onChange={handleChange}
+              options={[
+                { label: 'Active', value: 'active' },
+                { label: 'Pending', value: 'pending' },
+                { label: 'Blocked', value: 'blocked' },
+                { label: 'Qualified', value: 'qualified' },
+                { label: 'Registered', value: 'registered' }
+              ]}
               required
             />
           </div>
