@@ -120,6 +120,4 @@ export const getQuotationsForRFQ = async (rfqId: string) => {
   return prisma.quotation.findMany({ where: { rfqId }, include: { vendor: true, items: { include: { rfqItem: true } } }, orderBy: { createdAt: 'desc' } });
 };
 
-export const listAllQuotations = async () => {
-  return prisma.quotation.findMany({ include: { rfq: true, vendor: true, items: true }, orderBy: { createdAt: 'desc' } });
-};
+

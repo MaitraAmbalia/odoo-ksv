@@ -47,7 +47,4 @@ export const getQuotationsForRFQ = asyncHandler(async (req: Request, res: Respon
   res.json(apiResponse.success(quotations));
 });
 
-export const listAllQuotations = asyncHandler(async (req: Request, res: Response) => {
-  const quotations = await quotationService.listAllQuotations();
-  res.json(apiResponse.success(quotations));
-});
+
