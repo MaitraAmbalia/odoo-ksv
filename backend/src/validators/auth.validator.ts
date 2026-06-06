@@ -9,6 +9,7 @@ export const registerSchema = z.object({
     phone:      z.string().optional(),
     country:    z.string().optional(),
     role:       z.enum(['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER', 'VENDOR']),
+    avatar:     z.string().optional(),
   }),
 });
 

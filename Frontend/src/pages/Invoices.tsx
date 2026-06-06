@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/Button';
-
+import { Input } from '../components/Input';
 import api from '../utils/api';
 
 export const Invoices: React.FC = () => {
@@ -10,7 +10,17 @@ export const Invoices: React.FC = () => {
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
 
   const [invoices, setInvoices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const tabs = [
+    { label: 'All' },
+    { label: 'Draft' },
+    { label: 'Sent' },
+    { label: 'Paid' },
+    { label: 'Overdue' },
+    { label: 'Cancelled' }
+  ];
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -21,8 +31,9 @@ export const Invoices: React.FC = () => {
       setLoading(true);
       const res = await api.get('/invoices');
       setInvoices(res.data.data.data || res.data.data || []);
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
+    } catch (err: any) {
+      console.error('Failed to fetch invoices:', err);
+      setErrorMsg('Failed to load invoices');
     } finally {
       setLoading(false);
     }
@@ -32,84 +43,89 @@ export const Invoices: React.FC = () => {
     fetchInvoices();
   }, []);
 
-  // Close action menu on outside click
-  useEffect(() => {
-    const handleClick = () => setOpenActionMenuId(null);
-    if (openActionMenuId) {
-      document.addEventListener('click', handleClick);
-      return () => document.removeEventListener('click', handleClick);
-    }
-  }, [openActionMenuId]);
+  const toggleActionMenu = (id: string) => {
+    setOpenActionMenuId(openActionMenuId === id ? null : id);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DRAFT': return 'var(--text-muted)';
       case 'SENT': return '#3B82F6';
       case 'PAID': return '#10B981';
-      case 'OVERDUE': return '#EF4444';
-      case 'CANCELLED': return '#6B7280';
+      case 'OVERDUE': return '#F59E0B';
+      case 'CANCELLED': return '#EF4444';
       default: return 'var(--text-muted)';
     }
   };
 
-  // Filter invoices
-  const filteredInvoices = invoices.filter(inv => {
-    const vendorName = inv.vendor?.companyName || '';
-    const invoiceNum = inv.invoiceNumber || '';
-    const matchesSearch =
-      vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoiceNum.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesTab =
-      activeTab === 'All' ||
-      inv.status === activeTab.toUpperCase();
-
-    return matchesSearch && matchesTab;
-  });
-
-  const tabs = [
-    { label: 'All', count: invoices.length },
-    { label: 'DRAFT', count: invoices.filter(i => i.status === 'DRAFT').length },
-    { label: 'SENT', count: invoices.filter(i => i.status === 'SENT').length },
-    { label: 'PAID', count: invoices.filter(i => i.status === 'PAID').length },
-    { label: 'OVERDUE', count: invoices.filter(i => i.status === 'OVERDUE').length },
-    { label: 'CANCELLED', count: invoices.filter(i => i.status === 'CANCELLED').length }
-  ];
-
-  const toggleActionMenu = (id: string) => {
-    setOpenActionMenuId(openActionMenuId === id ? null : id);
+  const handleViewPDF = async (id: string) => {
+    setOpenActionMenuId(null);
+    try {
+      const res = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
+      const file = new Blob([res.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(file);
+      window.open(fileURL);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+      alert('Failed to view invoice PDF');
+    }
   };
 
   const handleSendInvoice = async (id: string) => {
+    setOpenActionMenuId(null);
     try {
       await api.post(`/invoices/${id}/send`);
-      fetchInvoices();
-    } catch (e) {
-      alert('Failed to send invoice');
+      alert('Invoice sent successfully via email!');
+      await fetchInvoices();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to send invoice');
     }
-    setOpenActionMenuId(null);
   };
 
   const handleMarkPaid = async (id: string) => {
+    setOpenActionMenuId(null);
     try {
       await api.post(`/invoices/${id}/mark-paid`);
-      fetchInvoices();
-    } catch (e) {
-      alert('Failed to mark as paid');
+      alert('Invoice marked as paid!');
+      await fetchInvoices();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to mark invoice as paid');
     }
-    setOpenActionMenuId(null);
   };
 
-  const handleViewDocument = async (id: string) => {
-    try {
-      const res = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      window.open(url);
-    } catch (e) {
-      alert('Failed to load document');
-    }
+  const handleCancelInvoice = async (id: string) => {
     setOpenActionMenuId(null);
+    if (!window.confirm('Are you sure you want to cancel this invoice?')) return;
+    try {
+      await api.post(`/invoices/${id}/cancel`);
+      alert('Invoice cancelled!');
+      await fetchInvoices();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to cancel invoice');
+    }
+  };
+
+  const statusMap: Record<string, string> = {
+    'Draft': 'DRAFT',
+    'Sent': 'SENT',
+    'Paid': 'PAID',
+    'Overdue': 'OVERDUE',
+    'Cancelled': 'CANCELLED'
+  };
+
+  const filteredInvoices = invoices.filter(inv => {
+    const matchesTab = activeTab === 'All' || inv.status === statusMap[activeTab];
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = 
+      inv.invoiceNumber.toLowerCase().includes(query) ||
+      inv.po?.poNumber.toLowerCase().includes(query) ||
+      (inv.vendor?.companyName && inv.vendor.companyName.toLowerCase().includes(query));
+    return matchesTab && matchesSearch;
+  });
+
+  const getTabCount = (label: string) => {
+    if (label === 'All') return invoices.length;
+    return invoices.filter(inv => inv.status === statusMap[label]).length;
   };
 
   return (
@@ -123,13 +139,20 @@ export const Invoices: React.FC = () => {
         </div>
       </header>
 
+      {errorMsg && (
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', color: '#EF4444', borderRadius: '0.5rem' }}>
+          {errorMsg}
+        </div>
+      )}
+
       {/* Search Bar */}
-      <section className="dashboard-card float-animation" style={{ padding: '0.5rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
-        <input 
+      <section className="dashboard-card float-animation" style={{ padding: '1rem', marginBottom: '2rem' }}>
+        <Input 
+          label=""
           placeholder={isVendor ? "Search by Invoice Number or PO Number..." : "Search by Invoice Number, PO Number, or Vendor..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none', color: 'var(--text-main)', fontSize: '0.9rem', padding: '0.5rem 0' }}
+          style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none' }}
         />
       </section>
 
@@ -150,7 +173,7 @@ export const Invoices: React.FC = () => {
               whiteSpace: 'nowrap'
             }}
           >
-            {tab.label} ({tab.count})
+            {tab.label} ({getTabCount(tab.label)})
           </button>
         ))}
       </section>
@@ -188,8 +211,8 @@ export const Invoices: React.FC = () => {
                   <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>{row.invoiceNumber}</td>
                     <td style={{ padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>{row.po?.poNumber || 'N/A'}</td>
-                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendor?.companyName || 'N/A'}</td>}
-                    <td style={{ padding: '1.5rem' }}>₹{row.grandTotal?.toLocaleString('en-IN') || 0}</td>
+                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendor?.companyName}</td>}
+                    <td style={{ padding: '1.5rem' }}>₹{row.grandTotal?.toLocaleString() || 0}</td>
                     <td style={{ padding: '1.5rem' }}>{new Date(row.dueDate).toLocaleDateString()}</td>
                     <td style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div className="glow-point" style={{ backgroundColor: getStatusColor(row.status), boxShadow: `0 0 10px ${getStatusColor(row.status)}` }} />
@@ -199,15 +222,13 @@ export const Invoices: React.FC = () => {
                       <Button 
                         variant="secondary" 
                         style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
-                        onClick={(e) => { e.stopPropagation(); toggleActionMenu(row.id); }}
+                        onClick={() => toggleActionMenu(row.id)}
                       >
                         Options
                       </Button>
                       
                       {openActionMenuId === row.id && (
-                        <div 
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
+                        <div style={{
                           position: 'absolute',
                           top: '100%',
                           right: '1.5rem',
@@ -222,23 +243,39 @@ export const Invoices: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                         }}>
                           <button 
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%', borderRadius: '0.25rem' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            onClick={() => handleViewDocument(row.id)}
-                          >View Document</button>
-                          {!isVendor && row.status === 'DRAFT' && <button 
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%', borderRadius: '0.25rem' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            onClick={() => handleSendInvoice(row.id)}
-                          >Send via Email</button>}
-                          {!isVendor && row.status === 'SENT' && <button 
-                            style={{ background: 'transparent', border: 'none', color: '#10B981', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%', borderRadius: '0.25rem' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            onClick={() => handleMarkPaid(row.id)}
-                          >Mark as Paid</button>}
+                            onClick={() => handleViewPDF(row.id)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                          >
+                            View Document
+                          </button>
+                          {!isVendor && (
+                            <>
+                              {['DRAFT', 'OVERDUE'].includes(row.status) && (
+                                <button 
+                                  onClick={() => handleSendInvoice(row.id)}
+                                  style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                                >
+                                  Send via Email
+                                </button>
+                              )}
+                              {row.status !== 'PAID' && row.status !== 'CANCELLED' && (
+                                <button 
+                                  onClick={() => handleMarkPaid(row.id)}
+                                  style={{ background: 'transparent', border: 'none', color: '#10B981', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                                >
+                                  Mark as Paid
+                                </button>
+                              )}
+                              {row.status !== 'PAID' && row.status !== 'CANCELLED' && (
+                                <button 
+                                  onClick={() => handleCancelInvoice(row.id)}
+                                  style={{ background: 'transparent', border: 'none', color: '#EF4444', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                                >
+                                  Cancel Invoice
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                     </td>

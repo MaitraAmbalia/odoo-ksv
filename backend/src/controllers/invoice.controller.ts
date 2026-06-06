@@ -4,7 +4,7 @@ import * as invoiceService from '../services/invoice.service';
 import { apiResponse } from '../utils/apiResponse';
 
 export const listInvoices = asyncHandler(async (req: Request, res: Response) => {
-  const result = await invoiceService.listInvoices(req.query);
+  const result = await invoiceService.listInvoices(req.query, req.user);
   res.json(apiResponse.paginated(result.invoices, { page: result.page, limit: result.limit, total: result.total }));
 });
 

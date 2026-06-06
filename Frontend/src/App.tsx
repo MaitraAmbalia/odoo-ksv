@@ -6,6 +6,7 @@ import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Vendors } from './pages/Vendors';
 import { CreateRFQ } from './pages/CreateRFQ';
+import { RFQs } from './pages/RFQs';
 import { Quotations } from './pages/Quotations';
 import { Approvals } from './pages/Approvals';
 import { PurchaseOrders } from './pages/PurchaseOrders';
@@ -25,7 +26,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/vendors" element={<Vendors />} />
-        <Route path="/rfqs" element={<CreateRFQ />} />
+        <Route path="/rfqs" element={<RFQs />} />
+        <Route path="/rfqs/new" element={<CreateRFQ />} />
         <Route path="/quotations" element={<Quotations />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/purchase-orders" element={<PurchaseOrders />} />

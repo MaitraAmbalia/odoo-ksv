@@ -75,6 +75,8 @@ export const submitQuotation = async (quotationId: string, vendorId: string) => 
   if (q.vendorId !== vendorId) throw new AppError(403, 'Not your quotation');
   if (q.status !== 'DRAFT') throw new AppError(400, 'Only DRAFT quotations can be submitted');
 
+  const vendor = await prisma.vendor.findUniqueOrThrow({ where: { id: vendorId } });
+
   const updated = await prisma.quotation.update({
     where: { id: quotationId },
     data: { status: 'SUBMITTED', submittedAt: new Date() },
@@ -83,7 +85,7 @@ export const submitQuotation = async (quotationId: string, vendorId: string) => 
     where: { rfqId_vendorId: { rfqId: q.rfqId, vendorId } },
     data: { status: 'SUBMITTED' },
   });
-  await auditLog.write({ userId: vendorId, entityType: 'QUOTATION', entityId: quotationId, action: Actions.QUOTATION_SUBMITTED });
+  await auditLog.write({ userId: vendor.userId, entityType: 'QUOTATION', entityId: quotationId, action: Actions.QUOTATION_SUBMITTED });
   return updated;
 };
 
@@ -91,8 +93,11 @@ export const withdrawQuotation = async (quotationId: string, vendorId: string) =
   const q = await prisma.quotation.findUniqueOrThrow({ where: { id: quotationId } });
   if (q.vendorId !== vendorId) throw new AppError(403, 'Not your quotation');
   if (q.status !== 'SUBMITTED') throw new AppError(400, 'Only SUBMITTED quotations can be withdrawn');
+
+  const vendor = await prisma.vendor.findUniqueOrThrow({ where: { id: vendorId } });
+
   const updated = await prisma.quotation.update({ where: { id: quotationId }, data: { status: 'WITHDRAWN' } });
-  await auditLog.write({ userId: vendorId, entityType: 'QUOTATION', entityId: quotationId, action: Actions.QUOTATION_WITHDRAWN });
+  await auditLog.write({ userId: vendor.userId, entityType: 'QUOTATION', entityId: quotationId, action: Actions.QUOTATION_WITHDRAWN });
   return updated;
 };
 
@@ -113,4 +118,8 @@ export const getMyQuotations = async (vendorId: string) => {
 
 export const getQuotationsForRFQ = async (rfqId: string) => {
   return prisma.quotation.findMany({ where: { rfqId }, include: { vendor: true, items: { include: { rfqItem: true } } }, orderBy: { createdAt: 'desc' } });
+};
+
+export const listAllQuotations = async () => {
+  return prisma.quotation.findMany({ include: { rfq: true, vendor: true, items: true }, orderBy: { createdAt: 'desc' } });
 };

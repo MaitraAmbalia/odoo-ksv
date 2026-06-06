@@ -75,6 +75,7 @@ model User {
   role          Role
   phone         String?
   country       String?
+  avatar        String?
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

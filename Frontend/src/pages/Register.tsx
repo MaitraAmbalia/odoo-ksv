@@ -27,6 +27,8 @@ export const Register: React.FC = () => {
   const [submitError, setSubmitError] = useState('');
   const navigate = useNavigate();
 
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
