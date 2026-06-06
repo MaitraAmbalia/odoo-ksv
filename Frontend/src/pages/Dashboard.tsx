@@ -1,35 +1,14 @@
 import React, { useState } from 'react';
 import { Button } from '../components/Button';
 import { AddVendorModal } from '../components/AddVendorModal';
+import { DashboardLayout } from '../components/DashboardLayout';
 
 export const Dashboard: React.FC = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
 
   return (
-    <div className="dashboard-layout animate-fade-in">
-      {/* Sidebar - Optional but requested in wireframe */}
-      <aside className="sidebar">
-        <h2 style={{ color: 'var(--primary-color)', marginBottom: '2rem', fontSize: '1.25rem' }}>VendorBridge</h2>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {['Dashboard', 'Vendors', "RFQ's", 'Quotations', 'Approvals', 'Purchase Orders', 'Invoices', 'Reports', 'Activity'].map((item) => (
-            <a 
-              key={item} 
-              href="#" 
-              style={{ 
-                color: item === 'Dashboard' ? 'var(--primary-color)' : 'var(--text-muted)',
-                fontWeight: item === 'Dashboard' ? 600 : 400,
-                textDecoration: 'none'
-              }}
-            >
-              - {item}
-            </a>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="main-content">
-        <header style={{ marginBottom: '2.5rem' }}>
+    <DashboardLayout>
+      <header style={{ marginBottom: '2.5rem' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>Dashboard / Home Screen</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
             Welcome back, Procurement Officer - Today's Overview
@@ -92,10 +71,9 @@ export const Dashboard: React.FC = () => {
           <Button variant="primary" onClick={() => setIsAddVendorOpen(true)}>Add Vendor</Button>
           <Button variant="secondary" style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>View Invoices</Button>
         </section>
-      </main>
 
       {/* Modals */}
       <AddVendorModal isOpen={isAddVendorOpen} onClose={() => setIsAddVendorOpen(false)} />
-    </div>
+    </DashboardLayout>
   );
 };
