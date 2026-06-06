@@ -1,27 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { AddVendorModal } from '../components/AddVendorModal';
+import api from '../utils/api';
 
 export const Vendors: React.FC = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
+  
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const tabs = [
-    { label: 'All', count: 0 },
-    { label: 'Active', count: 0 },
-    { label: 'Pending', count: 0 },
-    { label: 'Blocked', count: 0 }
-  ];
+  const fetchVendors = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/vendors');
+      setVendors(res.data.data.data || res.data.data || []);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const vendors: any[] = [];
+  useEffect(() => {
+    fetchVendors();
+  }, []);
 
   const toggleActionMenu = (id: string) => {
     setOpenActionMenuId(openActionMenuId === id ? null : id);
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'var(--success-color)';
+      case 'PENDING': return 'var(--warning-color)';
+      case 'BLOCKED': return '#ff4d4f';
+      default: return 'var(--text-muted)';
+    }
+  };
+
+  // Filter vendors based on active tab and search query
+  const filteredVendors = vendors.filter(v => {
+    const matchesSearch = 
+      v.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      v.gstNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.category?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesTab = 
+      activeTab === 'All' || 
+      v.status === activeTab.toUpperCase();
+      
+    return matchesSearch && matchesTab;
+  });
+
+  const tabs = [
+    { label: 'All', count: vendors.length },
+    { label: 'Active', count: vendors.filter(v => v.status === 'ACTIVE').length },
+    { label: 'Pending', count: vendors.filter(v => v.status === 'PENDING').length },
+    { label: 'Blocked', count: vendors.filter(v => v.status === 'BLOCKED').length }
+  ];
 
   return (
     <DashboardLayout>
@@ -78,27 +119,33 @@ export const Vendors: React.FC = () => {
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor Name</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Category</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>GST no.</th>
-                <th style={{ padding: '1.5rem', fontWeight: 500 }}>contact no.</th>
+                <th style={{ padding: '1.5rem', fontWeight: 500 }}>Contact no.</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Status</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500, textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {vendors.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    Loading vendors...
+                  </td>
+                </tr>
+              ) : filteredVendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No vendors found.
                   </td>
                 </tr>
               ) : (
-                vendors.map((row) => (
+                filteredVendors.map((row) => (
                   <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '1.5rem' }}>{row.name}</td>
+                    <td style={{ padding: '1.5rem' }}>{row.companyName}</td>
                     <td style={{ padding: '1.5rem' }}>{row.category}</td>
-                    <td style={{ padding: '1.5rem' }}>{row.gst}</td>
-                    <td style={{ padding: '1.5rem' }}>{row.contact}</td>
+                    <td style={{ padding: '1.5rem' }}>{row.gstNumber}</td>
+                    <td style={{ padding: '1.5rem' }}>{row.contactPhone}</td>
                     <td style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div className="glow-point" style={{ backgroundColor: row.color, boxShadow: `0 0 10px ${row.color}` }} />
+                      <div className="glow-point" style={{ backgroundColor: getStatusColor(row.status), boxShadow: `0 0 10px ${getStatusColor(row.status)}` }} />
                       {row.status}
                     </td>
                     <td style={{ padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
@@ -140,7 +187,7 @@ export const Vendors: React.FC = () => {
       </section>
 
       {/* Modals */}
-      <AddVendorModal isOpen={isAddVendorOpen} onClose={() => setIsAddVendorOpen(false)} />
+      <AddVendorModal isOpen={isAddVendorOpen} onClose={() => setIsAddVendorOpen(false)} onVendorAdded={fetchVendors} />
     </DashboardLayout>
   );
 };

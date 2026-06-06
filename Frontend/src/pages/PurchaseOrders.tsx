@@ -18,6 +18,10 @@ export const PurchaseOrders: React.FC = () => {
 
   const purchaseOrders: any[] = [];
 
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isVendor = user?.role === 'VENDOR';
+
   const toggleActionMenu = (id: string) => {
     setOpenActionMenuId(openActionMenuId === id ? null : id);
   };
@@ -26,9 +30,9 @@ export const PurchaseOrders: React.FC = () => {
     <DashboardLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>Purchase Orders</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>{isVendor ? 'My Purchase Orders' : 'Purchase Orders'}</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Track and manage official purchase orders
+            {isVendor ? 'Track and fulfill your purchase orders' : 'Track and manage official purchase orders'}
           </p>
         </div>
       </header>
@@ -37,7 +41,7 @@ export const PurchaseOrders: React.FC = () => {
       <section className="dashboard-card float-animation" style={{ padding: '1rem', marginBottom: '2rem' }}>
         <Input 
           label=""
-          placeholder="Search by PO Number, Vendor, or RFQ Title..."
+          placeholder={isVendor ? "Search by PO Number or RFQ Title..." : "Search by PO Number, Vendor, or RFQ Title..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none' }}
@@ -73,7 +77,7 @@ export const PurchaseOrders: React.FC = () => {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>PO Number</th>
-                <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor</th>
+                {!isVendor && <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor</th>}
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>RFQ Title</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Grand Total</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Issued Date</th>
@@ -84,7 +88,7 @@ export const PurchaseOrders: React.FC = () => {
             <tbody>
               {purchaseOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={isVendor ? 6 : 7} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No purchase orders found.
                   </td>
                 </tr>
@@ -92,7 +96,7 @@ export const PurchaseOrders: React.FC = () => {
                 purchaseOrders.map((row) => (
                   <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>{row.poNumber}</td>
-                    <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>
+                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>}
                     <td style={{ padding: '1.5rem' }}>{row.rfqTitle}</td>
                     <td style={{ padding: '1.5rem' }}>₹{row.grandTotal}</td>
                     <td style={{ padding: '1.5rem' }}>{row.issuedDate}</td>
@@ -125,8 +129,8 @@ export const PurchaseOrders: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                         }}>
                           <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>View Document</button>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Generate Invoice</button>
-                          <button style={{ background: 'transparent', border: 'none', color: '#EF4444', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Cancel PO</button>
+                          {isVendor && <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Generate Invoice</button>}
+                          {!isVendor && <button style={{ background: 'transparent', border: 'none', color: '#EF4444', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Cancel PO</button>}
                         </div>
                       )}
                     </td>

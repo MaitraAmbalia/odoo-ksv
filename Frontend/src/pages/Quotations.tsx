@@ -18,6 +18,10 @@ export const Quotations: React.FC = () => {
 
   const quotations: any[] = [];
 
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isVendor = user?.role === 'VENDOR';
+
   const toggleActionMenu = (id: string) => {
     setOpenActionMenuId(openActionMenuId === id ? null : id);
   };
@@ -26,9 +30,9 @@ export const Quotations: React.FC = () => {
     <DashboardLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>Quotations</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>{isVendor ? 'My Quotations' : 'Quotations'}</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Manage and review supplier pricing submissions
+            {isVendor ? 'Manage and review your submitted quotations' : 'Manage and review supplier pricing submissions'}
           </p>
         </div>
       </header>
@@ -37,7 +41,7 @@ export const Quotations: React.FC = () => {
       <section className="dashboard-card float-animation" style={{ padding: '1rem', marginBottom: '2rem' }}>
         <Input 
           label=""
-          placeholder="Search by RFQ title, vendor name, or amount..."
+          placeholder={isVendor ? "Search by RFQ title or amount..." : "Search by RFQ title, vendor name, or amount..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', boxShadow: 'none' }}
@@ -73,7 +77,7 @@ export const Quotations: React.FC = () => {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>RFQ Title</th>
-                <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor</th>
+                {!isVendor && <th style={{ padding: '1.5rem', fontWeight: 500 }}>Vendor</th>}
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Amount</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Delivery Days</th>
                 <th style={{ padding: '1.5rem', fontWeight: 500 }}>Status</th>
@@ -83,7 +87,7 @@ export const Quotations: React.FC = () => {
             <tbody>
               {quotations.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={isVendor ? 5 : 6} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No quotations found.
                   </td>
                 </tr>
@@ -91,7 +95,7 @@ export const Quotations: React.FC = () => {
                 quotations.map((row) => (
                   <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '1.5rem' }}>{row.rfqTitle}</td>
-                    <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>
+                    {!isVendor && <td style={{ padding: '1.5rem' }}>{row.vendorName}</td>}
                     <td style={{ padding: '1.5rem' }}>₹{row.grandTotal}</td>
                     <td style={{ padding: '1.5rem' }}>{row.deliveryDays}</td>
                     <td style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -123,7 +127,7 @@ export const Quotations: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                         }}>
                           <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>View Details</button>
-                          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Compare</button>
+                          {!isVendor && <button style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', padding: '0.5rem', textAlign: 'left', cursor: 'pointer', width: '100%' }}>Compare</button>}
                         </div>
                       )}
                     </td>

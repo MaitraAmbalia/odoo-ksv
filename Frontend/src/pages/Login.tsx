@@ -24,6 +24,7 @@ export const Login: React.FC = () => {
       const response = await api.post('/auth/login', { email, password });
       if (response.data?.success) {
         localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.data.user));
         setSuccessMsg('Successfully logged in! Redirecting...');
         setTimeout(() => {
           navigate('/dashboard');

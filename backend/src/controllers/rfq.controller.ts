@@ -8,6 +8,11 @@ export const listRFQs = asyncHandler(async (req: Request, res: Response) => {
   res.json(apiResponse.paginated(result.rfqs, { page: result.page, limit: result.limit, total: result.total }));
 });
 
+export const listInvitedRFQs = asyncHandler(async (req: Request, res: Response) => {
+  const result = await rfqService.listInvitedRFQs(req.user.id, req.query);
+  res.json(apiResponse.paginated(result.rfqs, { page: result.page, limit: result.limit, total: result.total }));
+});
+
 export const createRFQ = asyncHandler(async (req: Request, res: Response) => {
   const rfq = await rfqService.createRFQ(req.body, req.user.id);
   res.status(201).json(apiResponse.success(rfq, 'RFQ created'));

@@ -2,22 +2,28 @@ import React, { useState } from 'react';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Select } from './Select';
+import api from '../utils/api';
 
 interface AddVendorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onVendorAdded?: () => void;
 }
 
-export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose }) => {
+export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose, onVendorAdded }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     orgName: '',
     email: '',
     phone: '',
     gstNumber: '',
-    currentStatus: '',
-    equipmentType: ''
+    currentStatus: 'PENDING',
+    equipmentType: 'electrical'
   });
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
@@ -26,33 +32,79 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Vendor Added:', formData);
-    onClose();
-    // Here you would typically make an API call
+    setLoading(true);
+    setError('');
+    
+    try {
+      // 1. Register User (Role: VENDOR)
+      const registerRes = await api.post('/auth/register', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: 'Password123!', // default password for vendor
+        role: 'VENDOR'
+      });
+      
+      const userId = registerRes.data.data.user.id;
+      
+      // 2. Create Vendor Profile
+      await api.post('/vendors', {
+        userId,
+        companyName: formData.orgName,
+        category: formData.equipmentType,
+        gstNumber: formData.gstNumber,
+        contactPhone: formData.phone,
+        status: formData.currentStatus,
+        address: ''
+      });
+      
+      if (onVendorAdded) onVendorAdded();
+      onClose();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create vendor');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="modal-overlay animate-fade-in" onClick={onClose}>
+    <div className="modal-overlay animate-fade-in" onClick={onClose} style={{ zIndex: 1000 }}>
       <div 
         className="glass-card glow-border" 
-        style={{ width: '100%', maxWidth: '500px', margin: '2rem' }}
+        style={{ width: '100%', maxWidth: '500px', margin: '2rem', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}
       >
         <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-main)' }}>Add Vendor</h2>
         
+        {error && (
+          <div style={{ color: '#ff4d4f', marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ff4d4f', borderRadius: '4px', background: 'rgba(255, 77, 79, 0.1)' }}>
+            {error}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="flex-col" style={{ gap: '1rem' }}>
+          <div className="grid-2-cols">
+            <Input 
+              label="First Name" 
+              name="firstName" 
+              value={formData.firstName} 
+              onChange={handleChange} 
+              placeholder="John"
+              required
+            />
+            <Input 
+              label="Last Name" 
+              name="lastName" 
+              value={formData.lastName} 
+              onChange={handleChange} 
+              placeholder="Doe"
+              required
+            />
+          </div>
           <Input 
-            label="Vendor Name" 
-            name="name" 
-            value={formData.name} 
-            onChange={handleChange} 
-            placeholder="John Doe"
-            required
-          />
-          <Input 
-            label="Organization Name" 
+            label="Organization/Company Name" 
             name="orgName" 
             value={formData.orgName} 
             onChange={handleChange} 
@@ -89,38 +141,38 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose 
               required
             />
             <Select 
-              label="Current Status" 
+              label="Initial Status" 
               name="currentStatus" 
               value={formData.currentStatus} 
               onChange={handleChange}
               options={[
-                { label: 'Active', value: 'active' },
-                { label: 'Pending', value: 'pending' },
-                { label: 'Blocked', value: 'blocked' },
-                { label: 'Qualified', value: 'qualified' },
-                { label: 'Registered', value: 'registered' }
+                { label: 'Pending', value: 'PENDING' },
+                { label: 'Active', value: 'ACTIVE' },
+                { label: 'Blocked', value: 'BLOCKED' }
               ]}
               required
             />
           </div>
           <Select 
-            label="Equipment Type" 
+            label="Category (Equipment Type)" 
             name="equipmentType" 
             value={formData.equipmentType} 
             onChange={handleChange}
             options={[
-              { label: 'Electrical', value: 'electrical' },
-              { label: 'Mechanical', value: 'mechanical' },
-              { label: 'IT & Software', value: 'it' },
-              { label: 'Office Supplies', value: 'office' },
-              { label: 'Other', value: 'other' }
+              { label: 'Electrical', value: 'Electrical' },
+              { label: 'Mechanical', value: 'Mechanical' },
+              { label: 'IT & Software', value: 'IT' },
+              { label: 'Office Supplies', value: 'Office' },
+              { label: 'Other', value: 'Other' }
             ]}
             required
           />
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="primary">Add Vendor</Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={loading}>
+              {loading ? 'Adding...' : 'Add Vendor'}
+            </Button>
           </div>
         </form>
       </div>

@@ -5,6 +5,7 @@ import { authorize } from '../middlewares/authorize';
 
 const router = Router();
 router.get('/',                         authenticate, authorize('ADMIN','PROCUREMENT_OFFICER','MANAGER'), ctrl.listRFQs);
+router.get('/invited',                  authenticate, authorize('VENDOR'),                                ctrl.listInvitedRFQs);
 router.post('/',                        authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.createRFQ);
 router.get('/:id',                      authenticate,                                                     ctrl.getRFQ);
 router.patch('/:id',                    authenticate, authorize('ADMIN','PROCUREMENT_OFFICER'),           ctrl.updateRFQ);
