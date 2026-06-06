@@ -44,13 +44,19 @@ export const getComparison = async (rfqId: string) => {
 export const selectQuotation = async (rfqId: string, quotationId: string, actorId: string) => {
   const rfq = await prisma.rFQ.findUniqueOrThrow({ where: { id: rfqId }, include: { quotations: true } });
 
+  const existingPendingApproval = await prisma.approval.findFirst({
+    where: { rfqId, status: 'PENDING' }
+  });
+  if (existingPendingApproval) {
+    throw new AppError(400, 'An approval request is already pending for this RFQ');
+  }
+
   await prisma.$transaction(async (tx) => {
-    await tx.quotation.update({ where: { id: quotationId }, data: { status: 'ACCEPTED' } });
-    await tx.quotation.updateMany({
-      where: { rfqId, id: { not: quotationId }, status: 'SUBMITTED' },
-      data: { status: 'REJECTED' },
+    await tx.approval.upsert({
+      where: { rfqId },
+      update: { quotationId, status: 'PENDING', decidedAt: null, approverId: null, remarks: null },
+      create: { rfqId, quotationId, status: 'PENDING' },
     });
-    await tx.approval.create({ data: { rfqId, quotationId, status: 'PENDING' } });
     await tx.rFQ.update({ where: { id: rfqId }, data: { status: 'CLOSED' } });
   });
 

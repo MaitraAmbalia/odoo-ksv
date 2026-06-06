@@ -27,7 +27,6 @@ export const getApproval = async (id: string) => {
 export const getPendingApprovals = async () => {
   return prisma.approval.findMany({ where: { status: 'PENDING' }, include: { rfq: true, quotation: { include: { vendor: true } } }, orderBy: { createdAt: 'desc' } });
 };
-
 export const approveQuotation = async (approvalId: string, remarks: string, approverId: string) => {
   const approval = await prisma.approval.findUniqueOrThrow({
     where: { id: approvalId },
@@ -41,6 +40,18 @@ export const approveQuotation = async (approvalId: string, remarks: string, appr
     await tx.approval.update({
       where: { id: approvalId },
       data: { status: 'APPROVED', approverId, remarks, decidedAt: new Date() },
+    });
+
+    // Set selected quotation status to ACCEPTED
+    await tx.quotation.update({
+      where: { id: approval.quotationId },
+      data: { status: 'ACCEPTED' }
+    });
+
+    // Set other quotations for this RFQ to REJECTED
+    await tx.quotation.updateMany({
+      where: { rfqId: approval.rfqId, id: { not: approval.quotationId }, status: 'SUBMITTED' },
+      data: { status: 'REJECTED' },
     });
 
     const po = await tx.purchaseOrder.create({
@@ -80,9 +91,23 @@ export const rejectQuotation = async (approvalId: string, remarks: string, appro
   if (approval.status !== 'PENDING') throw new AppError(400, 'Approval already decided');
   if (!remarks) throw new AppError(400, 'Remarks are required when rejecting');
 
-  await prisma.approval.update({
-    where: { id: approvalId },
-    data: { status: 'REJECTED', approverId, remarks, decidedAt: new Date() },
+  await prisma.$transaction(async (tx) => {
+    await tx.approval.update({
+      where: { id: approvalId },
+      data: { status: 'REJECTED', approverId, remarks, decidedAt: new Date() },
+    });
+
+    // Set the selected quotation to REJECTED so it can't be chosen again
+    await tx.quotation.update({
+      where: { id: approval.quotationId },
+      data: { status: 'REJECTED' }
+    });
+
+    // Revert RFQ status back to PUBLISHED so officer can select another quote
+    await tx.rFQ.update({
+      where: { id: approval.rfqId },
+      data: { status: 'PUBLISHED' }
+    });
   });
 
   const officer = await prisma.user.findUnique({ where: { id: approval.rfq.createdById } });

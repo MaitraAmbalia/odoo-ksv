@@ -15,6 +15,13 @@ export const generateInvoice = async (body: any, actorId: string) => {
   });
   if (po.status === 'CANCELLED') throw new AppError(400, 'Cannot invoice a cancelled PO');
 
+  const actor = await prisma.user.findUniqueOrThrow({ where: { id: actorId } });
+  if (actor.role === 'VENDOR') {
+    if (po.vendor.userId !== actorId) {
+      throw new AppError(403, 'You are not authorized to generate invoices for this Purchase Order');
+    }
+  }
+
   const subtotal = po.items.reduce((sum, i) => sum + i.totalPrice, 0);
   const tax = calculateGST(subtotal, gstRate ?? 18, taxType ?? 'GST_INTRA');
   const invoiceNumber = await generateInvoiceNumber();
@@ -81,12 +88,17 @@ export const getInvoice = async (id: string) => {
   return prisma.invoice.findUniqueOrThrow({ where: { id }, include: { items: true, vendor: true, po: true } });
 };
 
-export const listInvoices = async (query: any) => {
+export const listInvoices = async (query: any, user: any) => {
   const { status, vendorId } = query;
   const { page, limit, skip } = getPagination(query);
   const where: any = {};
   if (status) where.status = status;
   if (vendorId) where.vendorId = vendorId;
+  if (user && user.role === 'VENDOR') {
+    const vendor = await prisma.vendor.findUnique({ where: { userId: user.id } });
+    if (!vendor) throw new AppError(404, 'Vendor profile not found');
+    where.vendorId = vendor.id;
+  }
 
   const [invoices, total] = await Promise.all([
     prisma.invoice.findMany({ where, skip, take: limit, include: { vendor: true, po: true }, orderBy: { createdAt: 'desc' } }),

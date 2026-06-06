@@ -26,16 +26,7 @@ export const Register: React.FC = () => {
   const [submitError, setSubmitError] = useState('');
   const navigate = useNavigate();
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, avatar: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

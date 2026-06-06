@@ -16,7 +16,7 @@ export const listPOs = async (query: any, user: any) => {
   }
 
   const [pos, total] = await Promise.all([
-    prisma.purchaseOrder.findMany({ where, skip, take: limit, include: { vendor: true, quotation: true, items: { include: { rfqItem: true } } }, orderBy: { issuedAt: 'desc' } }),
+    prisma.purchaseOrder.findMany({ where, skip, take: limit, include: { vendor: true, quotation: { include: { rfq: true } }, items: { include: { rfqItem: true } } }, orderBy: { issuedAt: 'desc' } }),
     prisma.purchaseOrder.count({ where }),
   ]);
   return { pos, total, page, limit };

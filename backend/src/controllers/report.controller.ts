@@ -6,6 +6,7 @@ import { apiResponse } from '../utils/apiResponse';
 export const vendorPerformance = asyncHandler(async (req: Request, res: Response) => {
   const { from, to } = req.query as any;
   const dateFilter: any = from && to ? { createdAt: { gte: new Date(from), lte: new Date(to) } } : {};
+  const poDateFilter: any = from && to ? { issuedAt: { gte: new Date(from), lte: new Date(to) } } : {};
 
   const vendors = await prisma.vendor.findMany({
     include: {
