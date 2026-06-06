@@ -1,0 +1,13 @@
+-- AlterEnum
+ALTER TYPE "QuotationStatus" ADD VALUE 'SUPERSEDED';
+
+-- AlterEnum
+ALTER TYPE "RFQStatus" ADD VALUE 'AMENDED';
+
+-- AlterTable
+ALTER TABLE "RFQ" ADD COLUMN     "amendmentNote" TEXT,
+ADD COLUMN     "parentRfqId" TEXT,
+ADD COLUMN     "revision" INTEGER NOT NULL DEFAULT 1;
+
+-- AddForeignKey
+ALTER TABLE "RFQ" ADD CONSTRAINT "RFQ_parentRfqId_fkey" FOREIGN KEY ("parentRfqId") REFERENCES "RFQ"("id") ON DELETE SET NULL ON UPDATE CASCADE;

@@ -57,3 +57,8 @@ export const removeVendor = asyncHandler(async (req: Request, res: Response) => 
   await rfqService.removeVendor((req.params.id as string), (req.params.vendorId as string));
   res.json(apiResponse.success(null, 'Vendor removed'));
 });
+
+export const amendRFQ = asyncHandler(async (req: Request, res: Response) => {
+  const rfq = await rfqService.amendRFQ((req.params.id as string), req.body, req.user.id);
+  res.status(201).json(apiResponse.success(rfq, 'RFQ amended successfully'));
+});

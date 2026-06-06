@@ -29,6 +29,7 @@ enum RFQStatus {
   PUBLISHED
   CLOSED
   CANCELLED
+  AMENDED
 }
 
 enum QuotationStatus {
@@ -37,6 +38,7 @@ enum QuotationStatus {
   ACCEPTED
   REJECTED
   WITHDRAWN
+  SUPERSEDED
 }
 
 enum ApprovalStatus {
@@ -113,12 +115,17 @@ model RFQ {
   description   String?
   deadline      DateTime
   status        RFQStatus         @default(DRAFT)
+  revision      Int               @default(1)
+  parentRfqId   String?
+  amendmentNote String?
   createdById   String
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
   // Relations
   createdBy     User              @relation("RFQCreator", fields: [createdById], references: [id])
+  parentRfq     RFQ?              @relation("RFQRevisions", fields: [parentRfqId], references: [id])
+  childRfqs     RFQ[]             @relation("RFQRevisions")
   items         RFQItem[]
   vendorInvites RFQVendorInvite[]
   quotations    Quotation[]
