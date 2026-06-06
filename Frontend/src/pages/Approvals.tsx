@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/Button';
-import api from '../utils/api';
+import { api } from '../utils/api';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Label } from '../components/ui/label';
+import { Check, X, Clock, AlertCircle } from 'lucide-react';
 
 export const Approvals: React.FC = () => {
   const [activeTab, setActiveTab] = useState('PENDING');
@@ -60,13 +64,9 @@ export const Approvals: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>Approvals</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Review and decide on pending quotation selections
-          </p>
-        </div>
+      <header className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Approvals</h1>
+        <p className="text-muted-foreground mt-1">Review and decide on pending quotation selections</p>
       </header>
       
       {errorMsg && (
@@ -75,157 +75,197 @@ export const Approvals: React.FC = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '2rem', height: 'calc(100vh - 200px)' }}>
+      <div className="flex flex-col lg:flex-row gap-8 items-start min-h-[calc(100vh-220px)]">
         {/* Left Panel: Queue */}
-        <div style={{ width: '40%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <section style={{ display: 'flex', gap: '1rem', overflowX: 'auto' }}>
+        <div className="w-full lg:w-[40%] flex flex-col gap-6">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {tabs.map((tab) => (
               <button
                 key={tab.label}
-                onClick={() => { setActiveTab(tab.label); setSelectedApprovalId(null); setRemarks(''); setErrorMsg(''); }}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${activeTab === tab.label ? 'var(--text-main)' : 'var(--border-color)'}`,
-                  color: activeTab === tab.label ? 'var(--text-main)' : 'var(--text-muted)',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '2rem',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  whiteSpace: 'nowrap'
+                onClick={() => {
+                  setActiveTab(tab.label);
+                  setSelectedApprovalId(null);
+                  setRemarks('');
+                  setErrorMsg('');
                 }}
+                className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                  activeTab === tab.label
+                    ? 'bg-primary/15 text-primary border-primary/35'
+                    : 'bg-card/40 border-border text-muted-foreground hover:bg-card/65'
+                }`}
               >
                 {tab.label} ({tab.count})
               </button>
             ))}
-          </section>
+          </div>
 
-          <section className="dashboard-card float-animation" style={{ padding: '1rem', flex: 1, overflowY: 'auto' }}>
-            {loading ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
-            ) : approvals.filter(a => a.status === activeTab).length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No {activeTab.toLowerCase()} approvals.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {approvals.filter(a => a.status === activeTab).map(item => (
+          <Card className="bg-card/40 backdrop-blur-sm border-border flex-1 max-h-[550px] overflow-y-auto">
+            <CardHeader className="p-4 border-b border-border">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Approval Requests</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2 space-y-2">
+              {loading ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">Loading approvals...</div>
+              ) : approvals.filter(a => a.status === activeTab).length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm flex flex-col items-center justify-center gap-2">
+                  <Clock className="h-8 w-8 text-muted-foreground/50" />
+                  No {activeTab.toLowerCase()} approvals
+                </div>
+              ) : (
+                approvals.filter(a => a.status === activeTab).map(item => (
                   <div 
                     key={item.id}
                     onClick={() => { setSelectedApprovalId(item.id); setRemarks(''); setErrorMsg(''); }}
-                    style={{ 
-                      padding: '1rem', 
-                      border: `1px solid ${selectedApprovalId === item.id ? 'var(--text-main)' : 'var(--border-color)'}`, 
-                      borderRadius: '0.5rem', 
-                      cursor: 'pointer',
-                      background: selectedApprovalId === item.id ? 'rgba(255,255,255,0.05)' : 'transparent'
-                    }}
+                    className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                      selectedApprovalId === item.id 
+                        ? 'border-primary/50 bg-primary/5 shadow-md shadow-primary/5' 
+                        : 'border-border bg-background/40 hover:bg-background/60'
+                    }`}
                   >
-                    <div style={{ fontWeight: 500, marginBottom: '0.5rem' }}>[{item.status}] {item.rfq?.title || 'Unknown RFQ'}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Vendor: {item.quotation?.vendor?.companyName || 'Unknown Vendor'}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Amount: ₹{item.quotation?.grandTotal || 0} • {new Date(item.createdAt).toLocaleDateString()}</div>
+                    <div className="font-semibold text-sm text-foreground flex items-center justify-between gap-2">
+                      <span className="truncate">{item.rfq?.title || 'Unknown RFQ'}</span>
+                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                        item.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                        item.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                        'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-2">Vendor: {item.quotation?.vendor?.companyName || 'Unknown Vendor'}</div>
+                    <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                      <span>Amount: ₹{item.quotation?.grandTotal?.toLocaleString('en-IN') || 0}</span>
+                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Panel: Detail */}
-        <div style={{ width: '60%', display: 'flex', flexDirection: 'column' }}>
-          <section className="dashboard-card float-delayed-1" style={{ padding: '2rem', flex: 1, overflowY: 'auto' }}>
+        <div className="w-full lg:w-[60%] h-full">
+          <Card className="bg-card/40 backdrop-blur-sm border-border min-h-[500px]">
             {!selectedApproval ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+              <div className="flex flex-col items-center justify-center h-[500px] text-muted-foreground text-sm gap-2">
+                <AlertCircle className="h-8 w-8 text-muted-foreground/50" />
                 Select an approval request to view details
               </div>
             ) : (
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 500, marginBottom: '1rem' }}>Approval for: {selectedApproval.rfq?.title}</h2>
-                <hr style={{ border: '0', borderTop: '1px solid var(--border-color)', margin: '1rem 0' }} />
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                  <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Selected Vendor</div>
-                    <div style={{ fontWeight: 500 }}>{selectedApproval.quotation?.vendor?.companyName}</div>
-                  </div>
-                  <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Grand Total</div>
-                    <div style={{ fontWeight: 500 }}>₹{selectedApproval.quotation?.grandTotal}</div>
-                  </div>
-                  <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Delivery</div>
-                    <div style={{ fontWeight: 500 }}>{selectedApproval.quotation?.deliveryDays} days</div>
-                  </div>
-                  <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Payment Terms</div>
-                    <div style={{ fontWeight: 500 }}>{selectedApproval.quotation?.paymentTerms || 'N/A'}</div>
-                  </div>
-                </div>
-
-                <h3 style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }}>Quotation Summary</h3>
-                <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '2rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                      <th style={{ padding: '0.75rem', fontWeight: 500 }}>Metric</th>
-                      <th style={{ padding: '0.75rem', fontWeight: 500 }}>{selectedApproval.quotation?.vendor?.companyName}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '0.75rem' }}>Price</td>
-                      <td style={{ padding: '0.75rem', color: '#10B981' }}>₹{selectedApproval.quotation?.grandTotal}</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '0.75rem' }}>Delivery</td>
-                      <td style={{ padding: '0.75rem' }}>{selectedApproval.quotation?.deliveryDays} days</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '0.75rem' }}>Tax Type</td>
-                      <td style={{ padding: '0.75rem' }}>{selectedApproval.quotation?.taxType} ({selectedApproval.quotation?.gstRate}%)</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {selectedApproval.remarks && activeTab !== 'PENDING' && (
-                  <div style={{ marginBottom: '2rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Remarks:</div>
-                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem', fontStyle: 'italic' }}>
-                      {selectedApproval.remarks}
+                <CardHeader className="border-b border-border pb-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-xl font-semibold">{selectedApproval.rfq?.title || 'Unknown RFQ'}</CardTitle>
+                      <CardDescription className="mt-1">Submitted on {new Date(selectedApproval.createdAt).toLocaleDateString()}</CardDescription>
+                    </div>
+                    <div className={`self-start text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      selectedApproval.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/25' :
+                      selectedApproval.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25' :
+                      'bg-rose-500/10 text-rose-500 border border-rose-500/25'
+                    }`}>
+                      {selectedApproval.status}
                     </div>
                   </div>
-                )}
-
-                {activeTab === 'PENDING' && (
-                  <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Approval Remarks (Required for Rejection):</div>
-                    <textarea 
-                      placeholder="Add your remarks..." 
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                      style={{ 
-                        width: '100%', 
-                        padding: '1rem', 
-                        background: 'transparent', 
-                        border: '1px solid var(--border-color)', 
-                        borderRadius: '0.5rem',
-                        color: 'var(--text-main)',
-                        minHeight: '100px',
-                        outline: 'none',
-                        marginBottom: '1rem'
-                      }} 
-                    />
-                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                      <Button variant="secondary" onClick={() => handleAction('reject')} disabled={actionLoading} style={{ background: 'transparent', border: '1px solid #EF4444', color: '#EF4444' }}>
-                        {actionLoading ? '...' : '✗ Reject'}
-                      </Button>
-                      <Button variant="primary" onClick={() => handleAction('approve')} disabled={actionLoading} style={{ background: 'var(--brand-600)', color: '#fff', border: 'none' }}>
-                        {actionLoading ? '...' : '✓ Approve →'}
-                      </Button>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  {/* Summary Grid */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="p-4 rounded-lg bg-background/50 border border-border">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">Selected Vendor</div>
+                      <div className="text-base font-bold text-foreground mt-1">{selectedApproval.quotation?.vendor?.companyName || 'N/A'}</div>
+                    </div>
+                    <div className="p-4 rounded-lg bg-background/50 border border-border">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">Grand Total</div>
+                      <div className="text-base font-bold text-primary mt-1">₹{selectedApproval.quotation?.grandTotal?.toLocaleString('en-IN') || 0}</div>
+                    </div>
+                    <div className="p-4 rounded-lg bg-background/50 border border-border">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">Delivery Estimate</div>
+                      <div className="text-base font-bold text-foreground mt-1">{selectedApproval.quotation?.deliveryDays} Days</div>
+                    </div>
+                    <div className="p-4 rounded-lg bg-background/50 border border-border">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">Payment Terms</div>
+                      <div className="text-base font-bold text-foreground mt-1">{selectedApproval.quotation?.paymentTerms || 'N/A'}</div>
                     </div>
                   </div>
-                )}
+
+                  {/* Comparisons */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Quotation Metrics</h3>
+                    <div className="rounded-md border border-border bg-background/30 overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Metric</TableHead>
+                            <TableHead>{selectedApproval.quotation?.vendor?.companyName || 'Vendor'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">Price Comparison</TableCell>
+                            <TableCell className="text-emerald-500 font-semibold">₹{selectedApproval.quotation?.grandTotal?.toLocaleString('en-IN') || 0}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">Delivery Speed</TableCell>
+                            <TableCell>{selectedApproval.quotation?.deliveryDays} days</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">Tax Details</TableCell>
+                            <TableCell>{selectedApproval.quotation?.taxType || 'GST'} ({selectedApproval.quotation?.gstRate || 0}%)</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  {/* Remarks show for approved/rejected */}
+                  {selectedApproval.remarks && selectedApproval.status !== 'PENDING' && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-semibold text-foreground">Decision Remarks</div>
+                      <div className="p-4 bg-background/60 border border-border rounded-lg text-sm text-muted-foreground italic">
+                        "{selectedApproval.remarks}"
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Section */}
+                  {selectedApproval.status === 'PENDING' && (
+                    <div className="space-y-4 pt-4 border-t border-border">
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="remarks" className="text-sm font-medium text-muted-foreground">Decision Remarks (Required for Rejection)</Label>
+                        <textarea 
+                          id="remarks"
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          placeholder="Optional comments for approval or rejection..."
+                          value={remarks}
+                          onChange={(e) => setRemarks(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-3 justify-end">
+                        <Button 
+                          variant="secondary" 
+                          onClick={() => handleAction('reject')}
+                          disabled={actionLoading}
+                          className="text-destructive border border-destructive/30 bg-destructive/5 hover:bg-destructive/15 gap-1"
+                        >
+                          <X className="h-4 w-4" /> Reject
+                        </Button>
+                        <Button 
+                          variant="primary" 
+                          onClick={() => handleAction('approve')}
+                          disabled={actionLoading}
+                          className="gap-1"
+                        >
+                          <Check className="h-4 w-4" /> Approve Selection
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
               </div>
             )}
-          </section>
+          </Card>
         </div>
       </div>
     </DashboardLayout>

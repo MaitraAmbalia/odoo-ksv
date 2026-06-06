@@ -19,7 +19,7 @@ export const getUnreadCount = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const markOneRead = asyncHandler(async (req: Request, res: Response) => {
-  await prisma.notification.update({ where: { id: req.params.id }, data: { isRead: true } });
+  await prisma.notification.update({ where: { id: (req.params.id as string) }, data: { isRead: true } });
   res.json(apiResponse.success(null, 'Marked as read'));
 });
 

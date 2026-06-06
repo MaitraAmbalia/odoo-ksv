@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Select } from './Select';
-import api from '../utils/api';
+import { api } from '../utils/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 interface AddVendorModalProps {
   isOpen: boolean;
@@ -19,13 +27,11 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose,
     phone: '',
     gstNumber: '',
     currentStatus: 'PENDING',
-    equipmentType: 'electrical'
+    equipmentType: 'Electrical'
   });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  if (!isOpen) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -44,7 +50,9 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose,
         lastName: formData.lastName,
         email: formData.email,
         password: 'Password123!', // default password for vendor
-        role: 'VENDOR'
+        role: 'VENDOR',
+        country: 'India',
+        phone: formData.phone
       });
       
       const userId = registerRes.data.data.user.id;
@@ -70,22 +78,23 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose,
   };
 
   return (
-    <div className="modal-overlay animate-fade-in" onClick={onClose} style={{ zIndex: 1000 }}>
-      <div 
-        className="glass-card glow-border" 
-        style={{ width: '100%', maxWidth: '500px', margin: '2rem', maxHeight: '90vh', overflowY: 'auto' }}
-        onClick={e => e.stopPropagation()}
-      >
-        <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-main)' }}>Add Vendor</h2>
-        
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px] bg-card/95 backdrop-blur-md border border-border shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-foreground">Add Vendor</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Enter the details of the new vendor to add them to the system.
+          </DialogDescription>
+        </DialogHeader>
+
         {error && (
-          <div style={{ color: '#ff4d4f', marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ff4d4f', borderRadius: '4px', background: 'rgba(255, 77, 79, 0.1)' }}>
+          <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/25 rounded-md text-center">
             {error}
           </div>
         )}
-        
-        <form onSubmit={handleSubmit} className="flex-col" style={{ gap: '1rem' }}>
-          <div className="grid-2-cols">
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <Input 
               label="First Name" 
               name="firstName" 
@@ -111,7 +120,7 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose,
             placeholder="Tech Corp Inc."
             required
           />
-          <div className="grid-2-cols">
+          <div className="grid grid-cols-2 gap-4">
             <Input 
               label="Email" 
               name="email" 
@@ -131,7 +140,7 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose,
               required
             />
           </div>
-          <div className="grid-2-cols">
+          <div className="grid grid-cols-2 gap-4">
             <Input 
               label="GST Number" 
               name="gstNumber" 
@@ -168,14 +177,16 @@ export const AddVendorModal: React.FC<AddVendorModalProps> = ({ isOpen, onClose,
             required
           />
           
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={loading}>
+          <DialogFooter className="pt-4 border-t border-border -mx-4 -mb-4 px-4 bg-muted/30">
+            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
               {loading ? 'Adding...' : 'Add Vendor'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

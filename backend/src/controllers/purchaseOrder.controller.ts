@@ -9,11 +9,11 @@ export const listPOs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getPO = asyncHandler(async (req: Request, res: Response) => {
-  const po = await poService.getPO(req.params.id);
+  const po = await poService.getPO((req.params.id as string));
   res.json(apiResponse.success(po));
 });
 
 export const cancelPO = asyncHandler(async (req: Request, res: Response) => {
-  const po = await poService.cancelPO(req.params.id, req.user.id);
+  const po = await poService.cancelPO((req.params.id as string), req.user.id);
   res.json(apiResponse.success(po, 'PO cancelled'));
 });

@@ -1,4 +1,5 @@
 import React, { type ButtonHTMLAttributes } from 'react';
+import { Button as ShadcnButton } from './ui/button';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary';
@@ -13,12 +14,13 @@ export const Button: React.FC<ButtonProps> = ({
   ...props 
 }) => {
   return (
-    <button 
-      className={`btn btn-${variant} ${className} ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+    <ShadcnButton 
+      variant={variant === 'primary' ? 'default' : 'secondary'}
+      className={className}
       disabled={isLoading || props.disabled}
-      {...props}
+      {...(props as any)}
     >
       {isLoading ? 'Loading...' : children}
-    </button>
+    </ShadcnButton>
   );
 };

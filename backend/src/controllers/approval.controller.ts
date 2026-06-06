@@ -14,16 +14,16 @@ export const getPendingApprovals = asyncHandler(async (req: Request, res: Respon
 });
 
 export const getApproval = asyncHandler(async (req: Request, res: Response) => {
-  const approval = await approvalService.getApproval(req.params.id);
+  const approval = await approvalService.getApproval((req.params.id as string));
   res.json(apiResponse.success(approval));
 });
 
 export const approve = asyncHandler(async (req: Request, res: Response) => {
-  await approvalService.approveQuotation(req.params.id, req.body.remarks || '', req.user.id);
+  await approvalService.approveQuotation((req.params.id as string), req.body.remarks || '', req.user.id);
   res.json(apiResponse.success(null, 'Approved — Purchase Order generated'));
 });
 
 export const reject = asyncHandler(async (req: Request, res: Response) => {
-  await approvalService.rejectQuotation(req.params.id, req.body.remarks, req.user.id);
+  await approvalService.rejectQuotation((req.params.id as string), req.body.remarks, req.user.id);
   res.json(apiResponse.success(null, 'Rejected'));
 });

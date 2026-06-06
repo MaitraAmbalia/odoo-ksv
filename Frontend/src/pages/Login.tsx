@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { ShieldAlert, LogIn } from 'lucide-react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { api } from '../utils/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -38,60 +39,68 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex-center animate-fade-in">
-      <div className="glass-card" style={{ width: '100%', maxWidth: '420px' }}>
-        <div className="flex-col" style={{ alignItems: 'center', marginBottom: '2rem' }}>
-          <div className="photo-upload">
-            <User size={40} />
+    <div className="min-h-screen flex items-center justify-center bg-background/50 px-4">
+      <Card className="w-full max-w-[420px] bg-card/40 backdrop-blur-md border-border shadow-xl">
+        <CardHeader className="space-y-1 flex flex-col items-center">
+          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
+            <LogIn className="h-6 w-6" />
           </div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Login to VendorBridge</p>
-        </div>
+          <CardTitle className="text-2xl font-bold tracking-tight text-center">Welcome Back</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Login to your VendorBridge ERP account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/25 rounded-md text-center flex items-center justify-center gap-2">
+                <ShieldAlert className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+            {successMsg && (
+              <div className="p-3 text-sm text-primary bg-primary/10 border border-primary/25 rounded-md text-center">
+                {successMsg}
+              </div>
+            )}
 
-        <form onSubmit={handleLogin} className="flex-col" style={{ gap: '0.5rem' }}>
-          {error && (
-            <div style={{ color: 'var(--error-color)', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center' }}>
-              {error}
+            <Input 
+              label="Username / Email" 
+              type="text"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <Input 
+              label="Password" 
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <div className="flex justify-end text-sm">
+              <Link to="/forgot-password" className="text-primary hover:underline font-medium">
+                Forgot password?
+              </Link>
             </div>
-          )}
-          {successMsg && (
-            <div style={{ color: 'var(--primary-color)', fontSize: '0.9rem', marginBottom: '1rem', textAlign: 'center', padding: '0.5rem', border: '1px solid var(--primary-color)', borderRadius: '0.5rem', background: 'rgba(0, 229, 155, 0.1)' }}>
-              {successMsg}
+
+            <Button type="submit" className="w-full mt-2">
+              Login
+            </Button>
+
+            <div className="text-center text-sm text-muted-foreground mt-4">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-primary hover:underline font-semibold">
+                Sign up
+              </Link>
             </div>
-          )}
-
-          <Input 
-            label="Username / Email" 
-            type="text"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <Input 
-            label="Password" 
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem', marginTop: '-0.5rem' }}>
-            <a href="#" style={{ fontSize: '0.875rem' }}>Forgot password?</a>
-          </div>
-
-          <Button type="submit" style={{ width: '100%', marginBottom: '1.5rem' }}>
-            Login
-          </Button>
-
-          <div style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Don't have an account?{' '}
-            <Link to="/register" style={{ fontWeight: '600' }}>
-              Sign up
-            </Link>
-          </div>
-        </form>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

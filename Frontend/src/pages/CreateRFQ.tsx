@@ -3,7 +3,11 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Input } from '../components/Input';
 import { Select } from '../components/Select';
 import { Button } from '../components/Button';
-import api from '../utils/api';
+import { api } from '../utils/api';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Label } from '../components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Trash2, Plus, UploadCloud, X } from 'lucide-react';
 
 export const CreateRFQ: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,7 +27,6 @@ export const CreateRFQ: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    // Fetch vendors to use for assignment
     const fetchVendors = async () => {
       try {
         const res = await api.get('/vendors');
@@ -41,15 +44,18 @@ export const CreateRFQ: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
 
     if (name === 'category') {
-      // Filter vendors by selected category
       const filtered = allVendors.filter(v => v.category?.toLowerCase() === value.toLowerCase() && v.status === 'ACTIVE');
       setAvailableVendors(filtered);
-      setAssignedVendors([]); // reset assigned on category change
+      setAssignedVendors([]); 
     }
   };
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { id: Date.now(), item: '', qty: 0, unit: 'NOS' }]);
+    setLineItems([...lineItems, { id: Date.now(), item: '', qty: 1, unit: 'NOS' }]);
+  };
+
+  const removeLineItem = (id: number) => {
+    setLineItems(lineItems.filter(item => item.id !== id));
   };
 
   const removeVendor = (vendorIdToRemove: string) => {
@@ -90,14 +96,11 @@ export const CreateRFQ: React.FC = () => {
 
       const res = await api.post('/rfqs', payload);
       
-      // If it's not a draft and the backend requires explicitly publishing it (depends on how backend handles status in create)
       if (!isDraft && res.data.data.status === 'DRAFT') {
          await api.post(`/rfqs/${res.data.data.id}/publish`);
       }
       
       setSuccessMsg(isDraft ? 'RFQ Saved as Draft successfully!' : 'RFQ Published and sent to vendors successfully!');
-      
-      // Reset form on success
       setFormData({ title: '', category: '', deadline: '', description: '' });
       setLineItems([]);
       setAssignedVendors([]);
@@ -110,167 +113,229 @@ export const CreateRFQ: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 300, letterSpacing: '1px' }}>Create RFQ's</h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>new request for quotation</p>
+      <header className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Create RFQ</h1>
+        <p className="text-muted-foreground mt-1">Submit a new Request for Quotation to vendors</p>
       </header>
 
       {/* Stepper */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3rem', width: '100%', maxWidth: '800px' }}>
-        <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'var(--primary-color)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>1</div>
-        <div style={{ flex: 1, height: '1px', background: 'var(--primary-color)' }}></div>
-        <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', border: '1px solid var(--border-color)', color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</div>
-        <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-        <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', border: '1px solid var(--border-color)', color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</div>
+      <div className="flex items-center mb-10 w-full max-w-[800px] gap-2">
+        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">1</div>
+        <div className="flex-1 h-0.5 bg-primary"></div>
+        <div className="w-8 h-8 rounded-full border border-border bg-card text-muted-foreground flex items-center justify-center font-bold text-sm">2</div>
+        <div className="flex-1 h-0.5 bg-border"></div>
+        <div className="w-8 h-8 rounded-full border border-border bg-card text-muted-foreground flex items-center justify-center font-bold text-sm">3</div>
       </div>
       
       {successMsg && (
-        <div style={{ padding: '1rem', marginBottom: '2rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10B981', color: '#10B981', borderRadius: '0.5rem' }}>
+        <div className="p-4 mb-6 text-sm text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 rounded-md text-center">
           {successMsg}
         </div>
       )}
       {errorMsg && (
-        <div style={{ padding: '1rem', marginBottom: '2rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', color: '#EF4444', borderRadius: '0.5rem' }}>
+        <div className="p-4 mb-6 text-sm text-destructive bg-destructive/10 border border-destructive/25 rounded-md text-center">
           {errorMsg}
         </div>
       )}
 
-      <div className="grid-2-cols" style={{ alignItems: 'start', gap: '4rem' }}>
-        {/* Left Column */}
-        <div className="flex-col" style={{ gap: '1.5rem' }}>
-          <Input 
-            label="RFQ's title*" 
-            name="title" 
-            value={formData.title} 
-            onChange={handleChange} 
-            style={{ background: 'transparent' }}
-          />
-          <Select 
-            label="Category" 
-            name="category" 
-            value={formData.category} 
-            onChange={handleChange}
-            options={[
-              { label: 'Select category...', value: '' },
-              { label: 'Electrical', value: 'Electrical' },
-              { label: 'Mechanical', value: 'Mechanical' },
-              { label: 'IT & Software', value: 'IT' },
-              { label: 'Office Supplies', value: 'Office' },
-              { label: 'Other', value: 'Other' }
-            ]}
-          />
-          <Input 
-            label="Deadline*" 
-            name="deadline" 
-            type="date"
-            value={formData.deadline} 
-            onChange={handleChange} 
-            style={{ background: 'transparent' }}
-          />
-          <div className="input-group">
-            <label className="input-label">Description</label>
-            <textarea 
-              name="description"
-              className="input-field" 
-              rows={4}
-              value={formData.description}
-              onChange={handleChange}
-              style={{ resize: 'vertical', background: 'transparent' }}
+      <div className="grid gap-8 lg:grid-cols-2 items-start">
+        {/* Left Column - Details */}
+        <Card className="bg-card/40 backdrop-blur-sm border-border">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">RFQ Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input 
+              label="RFQ Title *" 
+              name="title" 
+              placeholder="e.g. Office Laptops Procurement"
+              value={formData.title} 
+              onChange={handleChange} 
+              required
             />
-          </div>
-        </div>
+            
+            <Select 
+              label="Category" 
+              name="category" 
+              value={formData.category} 
+              onChange={handleChange}
+              options={[
+                { label: 'Select category...', value: '' },
+                { label: 'Electrical', value: 'Electrical' },
+                { label: 'Mechanical', value: 'Mechanical' },
+                { label: 'IT & Software', value: 'IT' },
+                { label: 'Office Supplies', value: 'Office' },
+                { label: 'Other', value: 'Other' }
+              ]}
+              required
+            />
 
-        {/* Right Column */}
-        <div className="flex-col" style={{ gap: '2.5rem' }}>
-          
-          {/* Line Items */}
-          <div>
-            <label className="input-label">Line items</label>
-            <div className="dashboard-card" style={{ padding: '0', overflow: 'hidden', marginBottom: '1rem', background: 'transparent', border: '1px solid var(--border-color)' }}>
-              <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 400 }}>item</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 400 }}>qty</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 400 }}>Unit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItems.map((item) => (
-                    <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '0.75rem 1rem' }}>
-                        <input type="text" value={item.item} onChange={(e) => handleLineItemChange(item.id, 'item', e.target.value)} style={{ background: 'transparent', border: 'none', color: 'inherit', width: '100%', outline: 'none' }} placeholder="Item name" />
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem' }}>
-                        <input type="number" value={item.qty} onChange={(e) => handleLineItemChange(item.id, 'qty', parseInt(e.target.value))} style={{ background: 'transparent', border: 'none', color: 'inherit', width: '100%', outline: 'none' }} />
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem' }}>
-                        <input type="text" value={item.unit} onChange={(e) => handleLineItemChange(item.id, 'unit', e.target.value)} style={{ background: 'transparent', border: 'none', color: 'inherit', width: '100%', outline: 'none' }} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <Input 
+              label="Deadline *" 
+              name="deadline" 
+              type="date"
+              value={formData.deadline} 
+              onChange={handleChange} 
+              required
+            />
+
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
+              <textarea 
+                id="description"
+                name="description"
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                rows={4}
+                placeholder="Provide details about specs, shipping, terms..."
+                value={formData.description}
+                onChange={handleChange}
+              />
             </div>
-            <Button variant="secondary" onClick={addLineItem} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.875rem', padding: '0.25rem 1rem' }}>+ add line item</Button>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Assign Vendors */}
-          <div>
-            <label className="input-label" style={{ textTransform: 'uppercase' }}>ASSIGN VENDORS</label>
-            <div className="dashboard-card" style={{ padding: '0', overflow: 'hidden', marginBottom: '1rem', background: 'transparent', border: '1px solid var(--border-color)' }}>
-              {assignedVendors.map((vendor, i) => (
-                <div key={vendor.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: i < assignedVendors.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                  <span>{vendor.name}</span>
-                  <button onClick={() => removeVendor(vendor.id)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>×</button>
-                </div>
-              ))}
-              {assignedVendors.length === 0 && (
-                <div style={{ padding: '1rem', color: 'var(--text-muted)' }}>No vendors assigned</div>
-              )}
-              <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border-color)' }}>
+        {/* Right Column - Items and Vendors */}
+        <div className="space-y-8">
+          {/* Line Items Card */}
+          <Card className="bg-card/40 backdrop-blur-sm border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-lg font-medium">Line Items</CardTitle>
+              <Button variant="secondary" onClick={addLineItem} className="h-8 px-3 text-xs gap-1">
+                <Plus className="h-3.5 w-3.5" /> Add Item
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-border bg-background/50 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead className="w-[100px]">Qty</TableHead>
+                      <TableHead className="w-[100px]">Unit</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lineItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <input 
+                            type="text" 
+                            value={item.item} 
+                            onChange={(e) => handleLineItemChange(item.id, 'item', e.target.value)} 
+                            className="bg-transparent border-0 focus:ring-0 text-sm text-foreground placeholder:text-muted-foreground w-full outline-none" 
+                            placeholder="Item name" 
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <input 
+                            type="number" 
+                            value={item.qty} 
+                            onChange={(e) => handleLineItemChange(item.id, 'qty', parseInt(e.target.value) || 0)} 
+                            className="bg-transparent border-0 focus:ring-0 text-sm text-foreground w-full outline-none" 
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <input 
+                            type="text" 
+                            value={item.unit} 
+                            onChange={(e) => handleLineItemChange(item.id, 'unit', e.target.value)} 
+                            className="bg-transparent border-0 focus:ring-0 text-sm text-foreground w-full outline-none" 
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="secondary" 
+                            onClick={() => removeLineItem(item.id)} 
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive/80 bg-transparent hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {lineItems.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                          No line items added yet. Click "+ Add Item".
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Vendors Card */}
+          <Card className="bg-card/40 backdrop-blur-sm border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-lg font-medium">Assigned Vendors</CardTitle>
+              {availableVendors.length > 0 && (
                 <select 
                   onChange={(e) => { addVendor(e.target.value); e.target.value = ""; }}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', outline: 'none', width: '100%' }}
+                  className="bg-card border border-border rounded-md px-2 py-1 text-xs text-foreground outline-none cursor-pointer max-w-[180px]"
                 >
-                  <option value="">+ add vendor...</option>
+                  <option value="">+ Add Vendor...</option>
                   {availableVendors.map(v => (
-                    <option key={v.id} value={v.id} style={{ background: 'var(--surface-color)' }}>{v.companyName}</option>
+                    <option key={v.id} value={v.id}>{v.companyName}</option>
                   ))}
                 </select>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {assignedVendors.map((vendor) => (
+                  <div key={vendor.id} className="flex justify-between items-center p-3 rounded-lg border border-border bg-background/50 text-sm">
+                    <span className="font-medium">{vendor.name}</span>
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => removeVendor(vendor.id)}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground bg-transparent hover:bg-accent"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {assignedVendors.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    {formData.category ? 'No vendors assigned. Choose from "+ Add Vendor" dropdown.' : 'Select a category to view and assign vendors.'}
+                  </p>
+                )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      <div style={{ marginTop: '3rem', borderTop: '1px solid var(--border-color)', paddingTop: '2.5rem', display: 'flex', justifyContent: 'space-between', gap: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Button variant="secondary" onClick={() => handleSubmit(false)} disabled={loading} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
+      {/* Attachments & Action Buttons */}
+      <div className="mt-8 pt-8 border-t border-border grid gap-8 md:grid-cols-2">
+        {/* Attachments */}
+        <Card className="bg-card/40 backdrop-blur-sm border-border">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Attachments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center text-center hover:bg-primary/5 transition-colors cursor-pointer group">
+              <UploadCloud className="h-10 w-10 text-muted-foreground group-hover:text-primary mb-3 transition-colors" />
+              <p className="text-sm text-muted-foreground">
+                Drag & drop files or <span className="text-primary font-semibold">click to upload</span>
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">PDF, Excel, Doc up to 10MB</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col justify-end gap-3 max-w-[320px] ml-auto w-full">
+          <Button variant="primary" className="w-full" onClick={() => handleSubmit(false)} disabled={loading}>
             {loading ? 'Processing...' : 'Save & Send to Vendors'}
           </Button>
-          <Button variant="secondary" onClick={() => handleSubmit(true)} disabled={loading} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
+          <Button variant="secondary" className="w-full" onClick={() => handleSubmit(true)} disabled={loading}>
             Save as Draft
           </Button>
-        </div>
-        
-        <div style={{ flex: 1, maxWidth: '400px' }}>
-          <label className="input-label">Attachments</label>
-          <div style={{ 
-            border: '1px dashed var(--border-color)', 
-            borderRadius: '0.5rem', 
-            padding: '2rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            color: 'var(--text-muted)',
-            background: 'transparent'
-          }}>
-            Drag & drop files or click to upload
-          </div>
         </div>
       </div>
     </DashboardLayout>
   );
 };
-

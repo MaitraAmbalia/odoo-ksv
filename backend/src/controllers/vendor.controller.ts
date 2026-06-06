@@ -14,16 +14,16 @@ export const createVendor = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const getVendor = asyncHandler(async (req: Request, res: Response) => {
-  const vendor = await vendorService.getVendor(req.params.id);
+  const vendor = await vendorService.getVendor((req.params.id as string));
   res.json(apiResponse.success(vendor));
 });
 
 export const updateVendor = asyncHandler(async (req: Request, res: Response) => {
-  const vendor = await vendorService.updateVendor(req.params.id, req.body);
+  const vendor = await vendorService.updateVendor((req.params.id as string), req.body);
   res.json(apiResponse.success(vendor, 'Vendor updated'));
 });
 
 export const changeStatus = asyncHandler(async (req: Request, res: Response) => {
-  const vendor = await vendorService.changeStatus(req.params.id, req.body.status, req.user.id);
+  const vendor = await vendorService.changeStatus((req.params.id as string), req.body.status, req.user.id);
   res.json(apiResponse.success(vendor, 'Status updated'));
 });

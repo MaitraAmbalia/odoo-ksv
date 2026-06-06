@@ -19,3 +19,15 @@ export const sendInvoiceEmail = async ({ to, invoice, pdfBuffer }: any) => {
     attachments: [{ filename: `${invoice.invoiceNumber}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }],
   });
 };
+
+export const sendResetPasswordEmail = async (to: string, resetUrl: string) => {
+  await transporter.sendMail({
+    from: env.FROM_EMAIL,
+    to,
+    subject: 'Reset your password - VendorBridge',
+    html: `<p>You requested a password reset from VendorBridge.</p>
+           <p>Please click the link below to reset your password. The link is valid for 15 minutes:</p>
+           <p><a href="${resetUrl}">${resetUrl}</a></p>
+           <p>If you did not request this, please ignore this email.</p>`,
+  });
+};
