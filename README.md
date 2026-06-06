@@ -52,7 +52,6 @@ odoo-ksv/
 │       ├── pages/                   # Route-level components (Dashboard, RFQs, Vendors)
 │       ├── lib/                     # Utilities (Axios config, formatting)
 │       └── assets/                  # Static images and icons
-├── design.md                        # Comprehensive UX design and architecture specs
 └── README.md
 ```
 
