@@ -140,7 +140,7 @@ VendorBridge implements robust security measures for enterprise use:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Dhruvlakhani94/odoo-ksv.git
+git clone https://github.com/MaitraAmbalia/odoo-ksv.git
 cd odoo-ksv
 ```
 
